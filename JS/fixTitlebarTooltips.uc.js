@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name           Fix Titlebar Button Tooltips
-// @version        1.2.0
+// @version        1.2.1
 // @author         aminomancer
 // @homepageURL    https://github.com/aminomancer/uc.css.js
 // @long-description
@@ -23,9 +23,8 @@ Since [bug 1718629][], Firefox has tried to make the titlebar buttons (window co
   // allow Windows 11 to show a Snap Layouts popup on the Maximize/Restore
   // buttons. But if you don't care about Snap Layouts and you just want a
   // normal Firefox tooltip (a markup element, styled by CSS) that says
-  // "Maximize" or "Restore Down", then you can change the setting below from
-  // `false` to `true`.
-  const disableSnapLayouts = false;
+  // "Maximize" or "Restore Down", then you can set the setting below to `true`.
+  const disableSnapLayouts = true;
 
   if (
     disableSnapLayouts ||

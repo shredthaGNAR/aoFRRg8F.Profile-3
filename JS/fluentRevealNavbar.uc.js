@@ -1,445 +1,528 @@
 // ==UserScript==
 // @name           Fluent Reveal Navbar Buttons
-// @version        1.3.0
-// @author         aminomancer
+// @version        2.0.0
+// @author         aminomancer (Enhanced)
 // @homepage       https://github.com/aminomancer/uc.css.js
-// @description    Adds a visual effect to navbar buttons with performance optimizations and error handling
+// @description    Adds a visual effect to navbar buttons similar to the spotlight gradient effect on Windows 10's start menu tiles. When hovering over or near a button, a subtle radial gradient is applied to every button in the vicinity of the mouse.
 // @downloadURL    https://cdn.jsdelivr.net/gh/aminomancer/uc.css.js@master/JS/fluentRevealNavbar.uc.js
 // @updateURL      https://cdn.jsdelivr.net/gh/aminomancer/uc.css.js@master/JS/fluentRevealNavbar.uc.js
-// @license        CC BY-NC-SA 4.0
+// @license        This Source Code Form is subject to the terms of the Creative Commons Attribution-NonCommercial-ShareAlike International License, v. 4.0.
 // ==/UserScript==
 
-(function() {
-  "use strict";
-  
-  class FluentRevealEffect {
-    // User configuration
-    static options = {
-      includeBookmarks: true,
-      includeUrlBar: true,
-      lightColor: "var(--button-hover-bgcolor, hsla(224, 100%, 80%, 0.15))",
-      gradientSize: 50,
-      clickEffect: false,
-      filterDy: false,
-      cacheButtons: false,
-      // Performance options
-      throttleMs: 16, // ~60fps
-      maxDistance: 200, // Max distance to apply effect
-    };
+"use strict";
 
-    constructor() {
-      this._options = { ...FluentRevealEffect.options };
-      this._disposed = false;
-      this._animationId = null;
-      this._lastEventTime = 0;
-      this._cachedElements = new Map();
-      this._boundHandleEvent = this.handleEvent.bind(this);
-      
+(() => {
+  // Configuration
+  const CONFIG = {
+    // Include bookmarks on the toolbar in the effect
+    includeBookmarks: true,
+    
+    // Include the URL bar in the effect
+    includeUrlBar: true,
+    
+    // Color of the gradient (default uses button hover background color)
+    lightColor: "var(--button-hover-bgcolor, hsla(224, 100%, 80%, 0.15))",
+    
+    // Size of the radial gradient in pixels
+    gradientSize: 50,
+    
+    // Show additional light burst when clicking (not recommended)
+    clickEffect: false,
+    
+    // Filter mouse movements too far from toolbar to reduce CPU load
+    filterDy: true,
+    
+    // Cache toolbar buttons for better performance
+    cacheButtons: true,
+    
+    // Debounce mouse movement events (milliseconds)
+    debounceDelay: 16, // ~60fps
+    
+    // Enable debug logging
+    debug: false,
+  };
+
+  class FluentRevealEffect {
+    #listeners = new Map();
+    #toolbarButtons = null;
+    #cachedElements = new WeakMap();
+    #rafId = null;
+    #lastMouseEvent = null;
+    #isPressed = false;
+    #someEffectsApplied = false;
+    #initialized = false;
+    #lastProcessTime = 0;
+    #mousePosition = { x: 0, y: 0 };
+
+    constructor(options = {}) {
+      this.options = { ...CONFIG, ...options };
+      this.#init();
+    }
+
+    #init() {
+      if (this.#initialized) {
+        this.#log("Already initialized");
+        return;
+      }
+
       try {
-        this.init();
+        // Check if required elements exist
+        if (!this.#validateEnvironment()) {
+          throw new Error("Required browser elements not found");
+        }
+
+        this.#setupAttributes();
+        this.#setupEventListeners();
+        this.#trackMousePosition();
+        this.#initialized = true;
+        this.#log("Initialization complete");
       } catch (error) {
-        console.error("FluentRevealEffect: Initialization failed: - fluentRevealNavbar.uc.js:41", error);
+        console.error("[FluentRevealNavbar] Initialization failed:", error);
       }
     }
 
-    init() {
-      if (!window.gNavToolbox) {
-        throw new Error("gNavToolbox not available");
-      }
+    #validateEnvironment() {
+      return !!(
+        window.gNavToolbox &&
+        window.gURLBar &&
+        document.getElementById("browser") &&
+        document.getElementById("PersonalToolbar")
+      );
+    }
 
-      this.applyEffect(window);
+    #setupAttributes() {
       document.documentElement.setAttribute("fluent-reveal-hover", "true");
-      
-      if (this._options.clickEffect) {
+      if (this.options.clickEffect) {
         document.documentElement.setAttribute("fluent-reveal-click", "true");
       }
-
-      // Setup cleanup on window unload
-      window.addEventListener("unload", () => this.dispose(), { once: true });
     }
 
-    // Cached getters with error handling
-    get toolbarButtons() {
-      if (this._disposed) return [];
+    #trackMousePosition() {
+      // Track mouse position globally for fallback
+      const trackHandler = (e) => {
+        this.#mousePosition.x = e.pageX;
+        this.#mousePosition.y = e.pageY;
+      };
       
+      document.addEventListener("mousemove", trackHandler, { passive: true });
+      this.#listeners.set("global-mousemove", trackHandler);
+    }
+
+    #setupEventListeners() {
+      const target = window;
+      
+      const events = [
+        ["mousemove", this.#handleMouseMove, { passive: true }],
+        ["mouseleave", this.#handleMouseLeave, { passive: true }],
+        ["scroll", this.#handleScroll, { passive: true, capture: true }],
+      ];
+
+      if (this.options.clickEffect) {
+        events.push(
+          ["mousedown", this.#handleMouseDown, { passive: true }],
+          ["mouseup", this.#handleMouseUp, { passive: true }]
+        );
+      }
+
+      events.forEach(([event, handler, options]) => {
+        const boundHandler = handler.bind(this);
+        target.addEventListener(event, boundHandler, options);
+        this.#listeners.set(`${event}-${options?.capture || false}`, {
+          target,
+          event,
+          handler: boundHandler,
+          options,
+        });
+      });
+
+      // Cleanup on window unload
+      window.addEventListener("unload", () => this.destroy(), { once: true });
+    }
+
+    get toolbarButtons() {
+      if (!this.#toolbarButtons || !this.options.cacheButtons) {
+        this.#toolbarButtons = this.#collectToolbarButtons();
+      }
+      return this.#toolbarButtons;
+    }
+
+    #collectToolbarButtons() {
       try {
-        if (!this._toolbarButtons || !this._options.cacheButtons) {
-          this._toolbarButtons = [];
-          
-          const navToolbox = window.gNavToolbox;
-          if (navToolbox) {
-            this._toolbarButtons = Array.from(
-              navToolbox.querySelectorAll(".toolbarbutton-1")
+        const buttons = [];
+        
+        // Main toolbar buttons
+        const mainButtons = gNavToolbox.querySelectorAll(
+          "#nav-bar .toolbarbutton-1:not([hidden]):not([collapsed])"
+        );
+        buttons.push(...mainButtons);
+        
+        // URL bar
+        if (this.options.includeUrlBar) {
+          const urlBar = document.getElementById("urlbar-background");
+          if (urlBar) buttons.push(urlBar);
+        }
+        
+        // Bookmarks toolbar
+        if (this.options.includeBookmarks) {
+          const personalToolbar = document.getElementById("PersonalToolbar");
+          if (personalToolbar && !personalToolbar.collapsed) {
+            const bookmarkButtons = personalToolbar.querySelectorAll(
+              ".toolbarbutton-1:not([hidden]), .bookmark-item:not([hidden])"
             );
-            
-            if (this._options.includeUrlBar) {
-              const urlbarBg = navToolbox.querySelector("#urlbar-background");
-              if (urlbarBg) this._toolbarButtons.push(urlbarBg);
-            }
-            
-            if (this._options.includeBookmarks && this.personalToolbar) {
-              const bookmarks = Array.from(
-                this.personalToolbar.querySelectorAll(".toolbarbutton-1, .bookmark-item")
-              );
-              this._toolbarButtons = this._toolbarButtons.concat(bookmarks);
-            }
+            buttons.push(...bookmarkButtons);
           }
         }
-        return this._toolbarButtons;
+        
+        return buttons;
       } catch (error) {
-        console.warn("FluentRevealEffect: Error getting toolbar buttons: - fluentRevealNavbar.uc.js:90", error);
+        this.#logError("Failed to collect toolbar buttons", error);
         return [];
       }
     }
 
-    get personalToolbar() {
-      if (!this._personalToolbar) {
-        this._personalToolbar = document.getElementById("PersonalToolbar");
+    #handleMouseMove = (event) => {
+      this.#lastMouseEvent = event;
+      this.#scheduleUpdate();
+    };
+
+    #handleMouseLeave = () => {
+      this.#clearAllEffects();
+    };
+
+    #handleScroll = (event) => {
+      if (this.#lastMouseEvent) {
+        this.#scheduleUpdate();
       }
-      return this._personalToolbar;
-    }
+    };
 
-    get browser() {
-      if (!this._browser) {
-        this._browser = document.getElementById("browser");
+    #handleMouseDown = (event) => {
+      if (event.button === 0) {
+        this.#isPressed = true;
+        this.#lastMouseEvent = event;
+        this.#scheduleUpdate(true);
       }
-      return this._browser;
-    }
+    };
 
-    // Throttled event handler
-    handleEvent(e) {
-      if (this._disposed) return;
+    #handleMouseUp = (event) => {
+      if (event.button === 0) {
+        this.#isPressed = false;
+        this.#lastMouseEvent = event;
+        this.#scheduleUpdate();
+      }
+    };
 
+    #scheduleUpdate(immediate = false) {
+      if (!this.#lastMouseEvent) return;
+
+      // Debounce updates for performance
       const now = performance.now();
-      if (now - this._lastEventTime < this._options.throttleMs) {
+      if (!immediate && now - this.#lastProcessTime < this.options.debounceDelay) {
         return;
       }
-      this._lastEventTime = now;
 
+      // Cancel previous scheduled update
+      if (this.#rafId) {
+        cancelAnimationFrame(this.#rafId);
+      }
+
+      this.#rafId = requestAnimationFrame(() => {
+        this.#processMouseEvent(this.#lastMouseEvent);
+        this.#lastProcessTime = performance.now();
+        this.#rafId = null;
+      });
+    }
+
+    #processMouseEvent(event) {
       try {
-        // Early exit for distant mouse events
-        if (this._options.filterDy && this.browser) {
-          const browserRect = this.browser.getBoundingClientRect();
-          if (e.clientY > browserRect.y + this._options.gradientSize) {
-            if (this._someEffectsApplied) {
-              this.clearEffectsForAll();
+        // Filter events too far from toolbar
+        if (this.options.filterDy) {
+          const browser = document.getElementById("browser");
+          const browserRect = browser?.getBoundingClientRect();
+          
+          if (browserRect && event.clientY > browserRect.y + this.options.gradientSize + 50) {
+            if (this.#someEffectsApplied) {
+              this.#clearAllEffects();
             }
             return;
           }
         }
 
-        // Cancel previous animation frame
-        if (this._animationId) {
-          cancelAnimationFrame(this._animationId);
-        }
-
-        this._animationId = requestAnimationFrame(() => {
-          this._animationId = null;
-          this.processEvent(e);
-        });
+        this.#generateEffectsForAll(event, this.#isPressed && this.options.clickEffect);
       } catch (error) {
-        console.warn("FluentRevealEffect: Error in handleEvent: - fluentRevealNavbar.uc.js:141", error);
+        this.#logError("Failed to process mouse event", error);
       }
     }
 
-    processEvent(e) {
-      if (this._disposed) return;
-
-      try {
-        switch (e.type) {
-          case "scroll":
-          case "mousemove":
-            if (this._options.clickEffect && this._options.is_pressed) {
-              this.generateEffectsForAll(e, true);
-            } else {
-              this.generateEffectsForAll(e);
-            }
-            break;
-
-          case "mousedown":
-            this._options.is_pressed = true;
-            if (this._options.clickEffect) {
-              this.generateEffectsForAll(e, true);
-            }
-            break;
-
-          case "mouseup":
-            this._options.is_pressed = false;
-            if (this._options.clickEffect) {
-              this.generateEffectsForAll(e);
-            }
-            break;
-
-          case "mouseleave":
-            this.clearEffectsForAll();
-            break;
-        }
-      } catch (error) {
-        console.warn("FluentRevealEffect: Error processing event: - fluentRevealNavbar.uc.js:178", error);
+    #generateEffectsForAll(event, withClick = false) {
+      const buttons = this.toolbarButtons;
+      
+      if (!buttons || buttons.length === 0) {
+        return;
       }
+
+      buttons.forEach(button => {
+        if (this.#isElementVisible(button)) {
+          this.#generateToolbarButtonEffect(button, event, withClick);
+        }
+      });
+      
+      this.#someEffectsApplied = true;
     }
 
-    applyEffect(el, options = {}) {
-      if (this._disposed || !el) return;
-
+    #generateToolbarButtonEffect(element, event, withClick = false) {
       try {
-        const mergedOptions = { ...this._options, ...options };
-        Object.assign(this._options, {
-          clickEffect: mergedOptions.clickEffect,
-          lightColor: mergedOptions.lightColor,
-          gradientSize: mergedOptions.gradientSize,
-          is_pressed: false,
-        });
-
-        // Use passive listeners where possible for better performance
-        el.addEventListener("mousemove", this._boundHandleEvent, { passive: true });
-        el.addEventListener("mouseleave", this._boundHandleEvent, { passive: true });
-        el.addEventListener("scroll", this._boundHandleEvent, { passive: true, capture: true });
-
-        if (this._options.clickEffect) {
-          el.addEventListener("mousedown", this._boundHandleEvent, { passive: true });
-          el.addEventListener("mouseup", this._boundHandleEvent, { passive: true });
-        }
-      } catch (error) {
-        console.error("FluentRevealEffect: Error applying effect: - fluentRevealNavbar.uc.js:204", error);
-      }
-    }
-
-    // Optimized with distance checking and caching
-    generateToolbarButtonEffect(el, e, click = false) {
-      if (this._disposed || !el) return;
-
-      try {
-        const { gradientSize, lightColor, maxDistance } = this._options;
-        
-        // Quick distance check to avoid expensive calculations
-        const elRect = el.getBoundingClientRect();
-        const mouseX = e.clientX || 0;
-        const mouseY = e.clientY || 0;
-        
-        const distance = Math.sqrt(
-          Math.pow(mouseX - (elRect.left + elRect.width / 2), 2) +
-          Math.pow(mouseY - (elRect.top + elRect.height / 2), 2)
-        );
-        
-        if (distance > maxDistance) {
-          return this.clearEffect(el);
-        }
-
-        const isBookmark = el.id === "PlacesChevron" || el.classList.contains("bookmark-item");
-        let area = this.getEffectArea(el, isBookmark);
-        
+        // Get or cache the target area for this button
+        const area = this.#getEffectArea(element);
         if (!area) return;
 
-        // Check for focused URL bar
-        if (this._options.includeUrlBar && el.id === 'urlbar-background' && 
-            window.gURLBar?.focused) {
-          return this.clearEffect(area);
+        // Skip if element is disabled or hidden
+        if (this.#shouldSkipElement(element, area)) {
+          return this.#clearEffect(area);
         }
 
-        // Check visibility and enabled state
-        if (!this.isElementEffectable(el, area, isBookmark)) {
-          return this.clearEffect(area);
-        }
+        // Calculate gradient position
+        const rect = area.getBoundingClientRect();
+        const x = (event.pageX ?? this.#mousePosition.x) - rect.left - window.scrollX;
+        const y = (event.pageY ?? this.#mousePosition.y) - rect.top - window.scrollY;
 
-        const coords = this.calculateGradientCoords(area, e);
-        if (!coords) return;
-
-        const cssLightEffect = click ? 
-          this.generateClickEffect(coords.x, coords.y, gradientSize, lightColor) : null;
-
-        this.drawEffect(area, coords.x, coords.y, lightColor, gradientSize, cssLightEffect);
+        // Draw the gradient effect
+        this.#drawEffect(area, x, y, withClick);
       } catch (error) {
-        console.warn("FluentRevealEffect: Error generating button effect: - fluentRevealNavbar.uc.js:253", error);
+        this.#logError("Failed to generate effect for button", error);
       }
     }
 
-    getEffectArea(el, isBookmark) {
-      // Cache area lookups for performance
-      const cacheKey = el.id || el.className;
-      if (this._cachedElements.has(cacheKey)) {
-        return this._cachedElements.get(cacheKey);
+    #getEffectArea(element) {
+      // Check cache first
+      if (this.#cachedElements.has(element)) {
+        return this.#cachedElements.get(element);
       }
 
-      let area;
-      if (isBookmark) {
-        area = el;
-      } else if (el.id === "urlbar-background") {
-        area = el;
+      let area = null;
+
+      if (element.id === "urlbar-background") {
+        area = element;
+      } else if (element.id === "PlacesChevron" || element.classList.contains("bookmark-item")) {
+        area = element;
       } else {
-        area = el.querySelector(".toolbarbutton-badge-stack") ||
-               el.querySelector(".toolbarbutton-icon");
+        // Try to find the icon or badge stack
+        area = element.querySelector(".toolbarbutton-badge-stack") ||
+               element.querySelector(".toolbarbutton-icon") ||
+               element.querySelector(".toolbarbutton-text");
       }
 
-      if (area && this._options.cacheButtons) {
-        this._cachedElements.set(cacheKey, area);
+      // Cache the result
+      if (area) {
+        this.#cachedElements.set(element, area);
       }
 
       return area;
     }
 
-    isElementEffectable(el, area, isBookmark) {
-      if (el.disabled || getComputedStyle(el).pointerEvents === "none") {
-        return false;
+    #shouldSkipElement(element, area) {
+      // Skip focused URL bar
+      if (this.options.includeUrlBar && 
+          element.id === "urlbar-background" && 
+          gURLBar?.focused) {
+        return true;
       }
 
-      const areaStyle = getComputedStyle(area);
-      if (areaStyle.display === "none" || 
-          areaStyle.visibility === "hidden" || 
-          areaStyle.visibility === "collapse") {
-        
-        if (isBookmark) return false;
-        
-        // Try fallback to text element
-        const textArea = el.querySelector(".toolbarbutton-text");
-        if (!textArea) return false;
-        
-        const textStyle = getComputedStyle(textArea);
-        return textStyle.display !== "none" && textStyle.visibility !== "hidden";
+      // Skip disabled elements
+      if (element.disabled || element.hasAttribute("disabled")) {
+        return true;
       }
 
-      return true;
+      // Skip invisible elements
+      const style = getComputedStyle(area);
+      if (style.display === "none" || 
+          style.visibility === "hidden" || 
+          style.visibility === "collapse" ||
+          style.pointerEvents === "none") {
+        return true;
+      }
+
+      return false;
     }
 
-    calculateGradientCoords(area, e) {
+    #isElementVisible(element) {
+      if (!element || !element.isConnected) return false;
+      
+      const rect = element.getBoundingClientRect();
+      return rect.width > 0 && rect.height > 0;
+    }
+
+    #drawEffect(element, x, y, withClick = false) {
+      const { gradientSize, lightColor } = this.options;
+      
+      let backgroundImage;
+      
+      if (withClick) {
+        // Click effect with double gradient
+        backgroundImage = `
+          radial-gradient(circle ${gradientSize}px at ${x}px ${y}px, 
+            ${lightColor}, transparent),
+          radial-gradient(circle 70px at ${x}px ${y}px, 
+            transparent, ${lightColor}, transparent, transparent)
+        `.replace(/\s+/g, ' ').trim();
+      } else {
+        // Normal hover effect
+        backgroundImage = `radial-gradient(circle ${gradientSize}px at ${x}px ${y}px, ${lightColor}, transparent)`;
+      }
+
+      element.style.backgroundImage = backgroundImage;
+    }
+
+    #clearEffect(element) {
+      if (element?.style) {
+        element.style.removeProperty("background-image");
+      }
+    }
+
+    #clearAllEffects() {
       try {
-        const offset = area.getBoundingClientRect();
-        return {
-          x: (e.pageX || e.clientX) - offset.left - window.scrollX,
-          y: (e.pageY || e.clientY) - offset.top - window.scrollY
-        };
-      } catch (error) {
-        console.warn("FluentRevealEffect: Error calculating coordinates: - fluentRevealNavbar.uc.js:312", error);
-        return null;
-      }
-    }
-
-    generateClickEffect(x, y, gradientSize, lightColor) {
-      return `radial-gradient(circle ${gradientSize}px at ${x}px ${y}px, ${lightColor}, rgba(255,255,255,0)), radial-gradient(circle 70px at ${x}px ${y}px, rgba(255,255,255,0), ${lightColor}, rgba(255,255,255,0), rgba(255,255,255,0))`;
-    }
-
-    generateEffectsForAll(e, click = false) {
-      if (this._disposed) return;
-
-      try {
-        const buttons = this.toolbarButtons;
-        for (const button of buttons) {
-          this.generateToolbarButtonEffect(button, e, click);
-        }
-        this._someEffectsApplied = true;
-      } catch (error) {
-        console.warn("FluentRevealEffect: Error generating effects: - fluentRevealNavbar.uc.js:331", error);
-      }
-    }
-
-    drawEffect(el, x, y, lightColor, gradientSize, cssLightEffect = null) {
-      if (!el || this._disposed) return;
-
-      try {
-        const lightBg = cssLightEffect || 
-          `radial-gradient(circle ${gradientSize}px at ${x}px ${y}px, ${lightColor}, rgba(255,255,255,0))`;
-        
-        el.style.backgroundImage = lightBg;
-      } catch (error) {
-        console.warn("FluentRevealEffect: Error drawing effect: - fluentRevealNavbar.uc.js:344", error);
-      }
-    }
-
-    clearEffect(el) {
-      if (!el || this._disposed) return;
-
-      try {
-        this._options.is_pressed = false;
-        el.style.removeProperty("background-image");
-      } catch (error) {
-        console.warn("FluentRevealEffect: Error clearing effect: - fluentRevealNavbar.uc.js:355", error);
-      }
-    }
-
-    clearEffectsForAll() {
-      if (this._disposed) return;
-
-      try {
-        const buttons = this.toolbarButtons;
-        for (const button of buttons) {
-          const area = this.getEffectArea(button, 
-            button.id === "PlacesChevron" || button.classList.contains("bookmark-item"));
+        this.toolbarButtons.forEach(button => {
+          const area = this.#getEffectArea(button);
           if (area) {
-            this.clearEffect(area);
+            this.#clearEffect(area);
           }
-        }
-        this._someEffectsApplied = false;
+        });
+        this.#someEffectsApplied = false;
       } catch (error) {
-        console.warn("FluentRevealEffect: Error clearing all effects: - fluentRevealNavbar.uc.js:373", error);
+        this.#logError("Failed to clear effects", error);
       }
     }
 
-    // Proper cleanup method
-    dispose() {
-      if (this._disposed) return;
+    #log(...args) {
+      if (this.options.debug) {
+        console.log("[FluentRevealNavbar]", ...args);
+      }
+    }
 
+    #logError(...args) {
+      console.error("[FluentRevealNavbar]", ...args);
+    }
+
+    // Public methods
+    updateOptions(newOptions) {
+      const oldOptions = { ...this.options };
+      this.options = { ...this.options, ...newOptions };
+
+      // Re-cache buttons if caching option changed
+      if (oldOptions.cacheButtons !== this.options.cacheButtons) {
+        this.#toolbarButtons = null;
+      }
+
+      // Update attributes if click effect changed
+      if (oldOptions.clickEffect !== this.options.clickEffect) {
+        if (this.options.clickEffect) {
+          document.documentElement.setAttribute("fluent-reveal-click", "true");
+          this.#setupClickListeners();
+        } else {
+          document.documentElement.removeAttribute("fluent-reveal-click");
+        }
+      }
+    }
+
+    #setupClickListeners() {
+      if (!this.#listeners.has("mousedown-false")) {
+        const mousedownHandler = this.#handleMouseDown.bind(this);
+        const mouseupHandler = this.#handleMouseUp.bind(this);
+        
+        window.addEventListener("mousedown", mousedownHandler, { passive: true });
+        window.addEventListener("mouseup", mouseupHandler, { passive: true });
+        
+        this.#listeners.set("mousedown-false", {
+          target: window,
+          event: "mousedown",
+          handler: mousedownHandler,
+          options: { passive: true },
+        });
+        
+        this.#listeners.set("mouseup-false", {
+          target: window,
+          event: "mouseup",
+          handler: mouseupHandler,
+          options: { passive: true },
+        });
+      }
+    }
+
+    refreshButtons() {
+      this.#toolbarButtons = null;
+      this.#cachedElements = new WeakMap();
+      return this.toolbarButtons;
+    }
+
+    destroy() {
       try {
-        this._disposed = true;
-
-        // Cancel any pending animation
-        if (this._animationId) {
-          cancelAnimationFrame(this._animationId);
-          this._animationId = null;
+        // Cancel any pending animation frame
+        if (this.#rafId) {
+          cancelAnimationFrame(this.#rafId);
+          this.#rafId = null;
         }
 
         // Clear all effects
-        this.clearEffectsForAll();
+        this.#clearAllEffects();
 
         // Remove event listeners
-        if (window && this._boundHandleEvent) {
-          window.removeEventListener("mousemove", this._boundHandleEvent);
-          window.removeEventListener("mouseleave", this._boundHandleEvent);
-          window.removeEventListener("scroll", this._boundHandleEvent, true);
-          
-          if (this._options.clickEffect) {
-            window.removeEventListener("mousedown", this._boundHandleEvent);
-            window.removeEventListener("mouseup", this._boundHandleEvent);
+        this.#listeners.forEach((listenerInfo) => {
+          if (typeof listenerInfo === "function") {
+            // Global mousemove handler
+            document.removeEventListener("mousemove", listenerInfo);
+          } else {
+            const { target, event, handler, options } = listenerInfo;
+            target.removeEventListener(event, handler, options);
           }
-        }
+        });
+        this.#listeners.clear();
 
-        // Clear caches
-        this._cachedElements.clear();
-        this._toolbarButtons = null;
-        this._personalToolbar = null;
-        this._browser = null;
-
-        // Remove DOM attributes
+        // Remove attributes
         document.documentElement.removeAttribute("fluent-reveal-hover");
         document.documentElement.removeAttribute("fluent-reveal-click");
 
+        // Clear caches
+        this.#toolbarButtons = null;
+        this.#cachedElements = new WeakMap();
+        this.#lastMouseEvent = null;
+        
+        this.#initialized = false;
+        this.#log("Cleanup complete");
       } catch (error) {
-        console.warn("FluentRevealEffect: Error during disposal: - fluentRevealNavbar.uc.js:416", error);
+        this.#logError("Cleanup failed", error);
       }
     }
   }
 
-  function init() {
+  // Initialize when browser is ready
+  const init = () => {
     try {
-      if (!window.gNavToolbox) {
-        console.error("FluentRevealEffect: gNavToolbox not available - fluentRevealNavbar.uc.js:424");
-        return;
+      if (!window.fluentRevealNavbar) {
+        window.fluentRevealNavbar = new FluentRevealEffect();
+        
+        // Add public API for debugging/customization
+        window.FluentReveal = {
+          updateOptions: (options) => window.fluentRevealNavbar.updateOptions(options),
+          refreshButtons: () => window.fluentRevealNavbar.refreshButtons(),
+          destroy: () => window.fluentRevealNavbar.destroy(),
+          get options() { return window.fluentRevealNavbar.options; },
+        };
       }
-
-      // Dispose existing instance if present
-      if (window.fluentRevealNavbar?.dispose) {
-        window.fluentRevealNavbar.dispose();
-      }
-
-      window.fluentRevealNavbar = new FluentRevealEffect();
     } catch (error) {
-      console.error("FluentRevealEffect: Initialization failed: - fluentRevealNavbar.uc.js:435", error);
+      console.error("[FluentRevealNavbar] Failed to initialize:", error);
     }
-  }
+  };
 
-  // Initialize when ready
-  if (window.gBrowserInit?.delayedStartupFinished) {
-  }
+  if (gBrowserInit?.delayedStartupFinished) {
     init();
-  { else 'oncee'}
-    window.addEventListener("load", init, { once: true });
-}
+  } else {
+    const observer = {
+      observe(subject, topic) {
+        if (topic === "browser-delayed-startup-finished" && subject === window) {
+          Services.obs.removeObserver(observer, topic);
+          init();
+        }
+      },
+    };
+    Services.obs.addObserver(observer, "browser-delayed-startup-finished");
+  }
+})();

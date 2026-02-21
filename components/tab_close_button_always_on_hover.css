@@ -2,11 +2,10 @@
 See the above repository for updates as well as full license text. */
 
 /* Always show tab close button on hover and never otherwise */
-.tabbrowser-tab .tab-close-button {
-  display: none !important;
+.tabbrowser-tab .tab-close-button{
+  display:none;
 }
-
-.tabbrowser-tab:not([pinned]):hover .tab-close-button {
+.tabbrowser-tab:not([pinned]):hover .tab-close-button{
   display: flex !important;
   align-items: center;
 }

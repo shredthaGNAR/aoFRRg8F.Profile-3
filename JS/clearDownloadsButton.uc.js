@@ -1,79 +1,110 @@
 // ==UserScript==
-// @name           Clear Downloads Panel Button
-// @version        1.4.3
-// @author         aminomancer
-// @homepageURL    https://github.com/aminomancer/uc.css.js
-// @description    Place a "Clear Downloads" button in the downloads panel, right next to the "Show all downloads" button.
-// @downloadURL    https://cdn.jsdelivr.net/gh/aminomancer/uc.css.js@master/JS/clearDownloadsButton.uc.js
-// @updateURL      https://cdn.jsdelivr.net/gh/aminomancer/uc.css.js@master/JS/clearDownloadsButton.uc.js
-// @license        This Source Code Form is subject to the terms of the Creative Commons Attribution-NonCommercial-ShareAlike International License, v. 4.0. If a copy of the CC BY-NC-SA 4.0 was not distributed with this file, You can obtain one at http://creativecommons.org/licenses/by-nc-sa/4.0/ or send a letter to Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
+// @name            Clear Downloads Panel Button
+// @version         1.5.0
+// @author          aminomancer (fixed)
+// @description     Place a "Clear Downloads" button in the downloads panel.
 // ==/UserScript==
 
 class ClearDLPanel {
   constructor() {
-    this.makeButton();
-    this.setCountHandler();
-    Services.obs.addObserver(this, "downloads-panel-count-changed");
+    this.init();
   }
+
+  async init() {
+    await this.makeButton();
+    this.hookCountChanged();
+  }
+
   async genStrings() {
-    this.strings = await new Localization(["browser/downloads.ftl"], true);
-    const messages = await this.strings.formatMessages([
-      "downloads-cmd-clear-downloads",
-    ]);
-    this.label = messages[0].attributes[0].value;
-    this.accessKey = messages[0].attributes[1].value;
-    return [this.label, this.accessKey];
+    // Localization needs to be handled carefully in modern Firefox
+    try {
+      this.strings = new Localization(["browser/downloads.ftl"], true);
+      const messages = await this.strings.formatMessages([
+        "downloads-cmd-clear-downloads",
+      ]);
+      this.label = messages[0].attributes.find(a => a.name === "label")?.value || "Clear Downloads";
+      this.accessKey = messages[0].attributes.find(a => a.name === "accesskey")?.value || "C";
+      return [this.label, this.accessKey];
+    } catch (e) {
+      return ["Clear Downloads", "C"];
+    }
   }
+
   async makeButton() {
+    const footer = document.getElementById("downloadsFooter");
+    if (!footer) return;
+
     this.clearPanelButton = document.createXULElement("button");
-    let strings = await this.genStrings();
-    let labelString = this.sentenceCase(strings[0]);
-    for (const [key, val] of Object.entries({
+    let [label, accesskey] = await this.genStrings();
+    
+    // Formatting label to Sentence case
+    let labelString = label.charAt(0).toUpperCase() + label.slice(1).toLowerCase();
+
+    const attrs = {
       id: "clearDownloadsPanel",
-      class:
-        DownloadsView.downloadsHistory.className ||
-        "downloadsPanelFooterButton subviewbutton panel-subview-footer-button toolbarbutton-1",
+      class: "downloadsPanelFooterButton subviewbutton panel-subview-footer-button toolbarbutton-1",
       label: labelString,
-      accesskey: strings[1],
+      accesskey: accesskey,
       flex: "1",
-      pack: "start",
-    })) {
+      pack: "start"
+    };
+
+    for (const [key, val] of Object.entries(attrs)) {
       this.clearPanelButton.setAttribute(key, val);
     }
+
     this.clearPanelButton.addEventListener("command", () => {
+      // Direct command to clear list
       goDoCommand("downloadsCmd_clearList");
-      DownloadsPanel.hidePanel();
+      if (typeof DownloadsPanel !== 'undefined') DownloadsPanel.hidePanel();
     });
-    DownloadsView.downloadsHistory.after(this.clearPanelButton);
-    this.clearPanelButton.hidden = !DownloadsView._visibleViewItems?.size > 0;
-    this.clearPanelButton
-      ?.closest("#downloadsFooter")
-      .prepend(document.createXULElement("toolbarseparator"));
-    this.clearPanelButton?.parentElement.setAttribute("uc-hbox", "true");
+
+    // Insertion logic
+    const historyButton = document.getElementById("downloadsHistory");
+    if (historyButton) {
+      historyButton.after(this.clearPanelButton);
+      
+      // Add a separator for visual consistency
+      let sep = document.createXULElement("toolbarseparator");
+      this.clearPanelButton.before(sep);
+      
+      // Align buttons horizontally
+      this.clearPanelButton.parentElement.style.display = "flex";
+      this.clearPanelButton.parentElement.style.flexDirection = "row";
+    }
+
+    this.updateVisibility();
   }
-  sentenceCase(str) {
-    return str
-      .toLocaleLowerCase()
-      .replace(RTL_UI ? /.$/i : /^./i, function (letter) {
-        return letter.toLocaleUpperCase();
-      })
-      .trim();
+
+  // Modern way to hook into the count change without eval()
+  hookCountChanged() {
+    if (typeof DownloadsView !== "undefined" && !DownloadsView._originalItemCountChanged) {
+      DownloadsView._originalItemCountChanged = DownloadsView._itemCountChanged;
+      
+      // Wrap the original function
+      DownloadsView._itemCountChanged = (count) => {
+        DownloadsView._originalItemCountChanged(count);
+        this.updateVisibility(count);
+      };
+    }
   }
-  setCountHandler() {
-    eval(
-      `DownloadsView._itemCountChanged = function ${DownloadsView._itemCountChanged
-        .toSource()
-        .replace(
-          /hiddenCount \> 0\;\n/,
-          `hiddenCount > 0;\n    Services.obs.notifyObservers(null, "downloads-panel-count-changed", String(count));\n`
-        )}`
-    );
-  }
-  observe(_sub, _top, data) {
-    this.clearPanelButton.hidden = parseInt(data) < 1;
+
+  updateVisibility(count) {
+    if (!this.clearPanelButton) return;
+    
+    // If count isn't passed, try to fetch it from the view
+    let currentCount = count ?? DownloadsView?._visibleViewItems?.size ?? 0;
+    this.clearPanelButton.hidden = currentCount < 1;
+    
+    // Hide the separator if the button is hidden
+    let sep = this.clearPanelButton.previousElementSibling;
+    if (sep && sep.tagName === "toolbarseparator") {
+      sep.hidden = this.clearPanelButton.hidden;
+    }
   }
 }
 
+// Startup execution
 if (gBrowserInit.delayedStartupFinished) {
   new ClearDLPanel();
 } else {

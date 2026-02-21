@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name           All Tabs Menu Expansion Pack
-// @version        2.2.0
+// @version        2.2.1
 // @author         aminomancer
 // @homepageURL    https://github.com/aminomancer
 // @long-description
@@ -12,28 +12,23 @@ Next to the "new tab" button in Firefox there's a V-shaped button that opens a b
 2. Adds an animated close button for every tab in this menu.
 3. Allows you to multiselect tabs in the all tabs menu and close an unlimited number of tabs at once without closing/blurring the popup.
 4. Significantly improves the mute/unmute button by making it work like the mute button in the tabs bar used to work.
-   - If you only have one tab selected, it mutes/unmutes that tab.
-   - If you have multiple tabs selected, it mutes/unmutes all of them.
-   - This also adds a tooltip to the mute button.
-5. By default, Firefox doesn't do anything to differentiate loaded tabs from unloaded tabs. But for the regular tab bar, unloaded tabs gain an attribute `pending="true"` which you can use to dim them. This way you know which tabs are already initialized and which will actually start up when you click them. Pretty useful if you frequently have 100+ tabs like me.
-   - This script adds the same functionality to the all tabs menu, but does not add "pending" styling to regular tabs since it's outside the scope of this project. To do it yourself just add a rule like `.tabbrowser-tab .tab-content{opacity:.6;}`
-   - If you use [Unread Tab Mods][], this integrates with it to make unread tabs display with italic text.
+5. By default, Firefox doesn't do anything to differentiate loaded tabs from unloaded tabs.
 6. Adds color stripes to multiselected tabs and container tabs in the "all tabs menu" so you can differentiate them from normal tabs.
 7. Includes a preference `userChrome.tabs.all-tabs-menu.reverse-order` that lets you reverse the order of the tabs so that newer tabs are displayed on top rather than on bottom.
 8. Allows the panel to display pinned tabs, and displays a pin icon on them.
 9. Makes the sound icon show if the tab has blocked media or media in picture-in-picture, just like regular tabs.
 10. Adds an optional preference `userChrome.ctrlTab.skip-show-all-button` that lets you skip past the "List All x Tabs" button when hitting Ctrl+Tab.
 11. And a few other subtle improvements.
-
-All the relevant CSS for this is already included in and loaded by the script. It's designed to look consistent with my theme as well as with the latest vanilla (proton) Firefox. If you need to change anything, see the "const css" line in here, or the end of uc-tabs-bar.css on my repo.
-
-[Unread Tab Mods]: https://github.com/aminomancer/uc.css.js/blob/master/JS/unreadTabMods.uc.js
 */
 // @downloadURL    https://cdn.jsdelivr.net/gh/aminomancer/uc.css.js@master/JS/allTabsMenuExpansionPack.uc.js
 // @updateURL      https://cdn.jsdelivr.net/gh/aminomancer/uc.css.js@master/JS/allTabsMenuExpansionPack.uc.js
 // @license        This Source Code Form is subject to the terms of the Creative Commons Attribution-NonCommercial-ShareAlike International License, v. 4.0. If a copy of the CC BY-NC-SA 4.0 was not distributed with this file, You can obtain one at http://creativecommons.org/licenses/by-nc-sa/4.0/ or send a letter to Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
 // ==/UserScript==
+
 (function () {
+  // Only run in the main browser window
+  if (location.href !== 'chrome://browser/content/browser.xhtml') return;
+
   let prefSvc = Services.prefs;
   let reversePref = "userChrome.tabs.all-tabs-menu.reverse-order";
   let skipShowAllPref = "userChrome.ctrlTab.skip-show-all-button";
@@ -72,7 +67,7 @@ All the relevant CSS for this is already included in and loaded by the script. I
   function l10nIfNeeded() {
     let lazies = document
       .getElementById("tabContextMenu")
-      .querySelectorAll("[data-lazy-l10n-id]");
+      ?.querySelectorAll("[data-lazy-l10n-id]");
     if (lazies) {
       MozXULElement.insertFTLIfNeeded("browser/tabContextMenu.ftl");
       lazies.forEach(el => {
@@ -88,27 +83,35 @@ All the relevant CSS for this is already included in and loaded by the script. I
       prefSvc.getBoolPref(reversePref) &&
       !lazy.TabsPanel.prototype.reversed
     ) {
-      eval(
-        `panel._populate = function ${panel._populate
-          .toSource()
-          .replace(
-            /super\.\_populate\(event\)\;/,
-            Object.getPrototypeOf(panel)
-              ._populate.toSource()
-              .replace(/^.*\n\s*/, "")
-              .replace(/\n.*$/, "")
-          )
-          .replace(
-            /appendChild/,
-            `prepend`
-          )}\n panel._addTab = function ${panel._addTab
-          .toSource()
-          .replace(
-            /nextRow\.parentNode\.insertBefore\(newRow\, nextRow\)\;/,
-            `nextRow.after(newRow)`
-          )
-          .replace(/this\.\_addElement/, `this.containerNode.prepend`)}`
-      );
+      // Override the _populate method
+      const original_populate = panel._populate;
+      if (original_populate) {
+        panel._populate = function(event) {
+          const originalSuper_populate = Object.getPrototypeOf(panel)._populate;
+          if (originalSuper_populate) {
+            originalSuper_populate.call(this, event);
+          }
+          // Reverse the order by prepending instead of appending
+          const rows = Array.from(this.containerNode.children);
+          rows.forEach(row => this.containerNode.prepend(row));
+        };
+      }
+
+      // Override the _addTab method
+      const original_addTab = panel._addTab;
+      if (original_addTab) {
+        panel._addTab = function(tab) {
+          const newRow = this._createRow(tab);
+          const nextRow = this._getRowForTab(tab._tPos + 1);
+          if (nextRow) {
+            nextRow.after(newRow);
+          } else {
+            this.containerNode.prepend(newRow);
+          }
+          return newRow;
+        };
+      }
+      
       lazy.TabsPanel.prototype.reversed = true;
     } else {
       delete panel._populate;
@@ -121,9 +124,11 @@ All the relevant CSS for this is already included in and loaded by the script. I
   // key navigation and prevent focusing hidden elements.
   function modifyWalkers(tabsPanel) {
     let panelViewClass = PanelView.forNode(tabsPanel.view);
-    if (
-      !panelViewClass.moveSelection.toSource().startsWith("(function uc_ATMEP_")
-    ) {
+    if (!panelViewClass) return;
+
+    // Override moveSelection if not already modified
+    if (!panelViewClass._uc_modified_moveSelection) {
+      const original_moveSelection = panelViewClass.moveSelection;
       panelViewClass.moveSelection = function uc_ATMEP_moveSelection(
         isDown,
         arrowKey = false
@@ -151,7 +156,10 @@ All the relevant CSS for this is already included in and loaded by the script. I
         this.selectedElement = newSel;
         return newSel;
       };
+      panelViewClass._uc_modified_moveSelection = true;
     }
+
+    // Add horizontal navigation support
     if (!panelViewClass.hasOwnProperty("moveSelectionHorizontal")) {
       panelViewClass.moveSelectionHorizontal =
         function uc_ATMEP_moveSelectionHorizontal(isNext) {
@@ -171,6 +179,8 @@ All the relevant CSS for this is already included in and loaded by the script. I
           return newSel;
         };
     }
+
+    // Add horizontal walker property
     if (!panelViewClass.hasOwnProperty("_horizontalNavigableWalker")) {
       Object.defineProperty(panelViewClass, "_horizontalNavigableWalker", {
         get() {
@@ -184,61 +194,89 @@ All the relevant CSS for this is already included in and loaded by the script. I
         },
       });
     }
-    if (
-      !panelViewClass._makeNavigableTreeWalker
-        .toSource()
-        .startsWith("(function uc_ATMEP_")
-    ) {
-      eval(
-        `panelViewClass._makeNavigableTreeWalker = function ${panelViewClass._makeNavigableTreeWalker
-          .toSource()
-          .replace(/^\(/, "")
-          .replace(/\)$/, "")
-          .replace(/^_makeNavigableTreeWalker\s*/, "")
-          .replace(/^function\s*/, "")
-          .replace(/^(.)/, `uc_ATMEP_makeNavigableTreeWalker $1`)
-          .replace(/\(arrowKey\)/, `(arrowKey, vertical = true)`)
-          // .replace(/(node\.disabled)/, `$1 || node.hidden`)
-          .replace(
-            /(let bounds = this)/,
-            `if (node.hidden) {\n        return NodeFilter.FILTER_SKIP;\n      }\n      $1`
-          )
-          .replace(
-            /(\(!arrowKey && this\._isNavigableWithTabOnly\(node\)\)\n\s*\) \{)/,
-            /* javascript */ `$1
-        if (vertical && node.classList.contains("all-tabs-secondary-button")) return NodeFilter.FILTER_SKIP;`
-          )}`
-      );
+
+    // Override _makeNavigableTreeWalker if not already modified
+    if (!panelViewClass._uc_modified_makeNavigableTreeWalker) {
+      const original_makeNavigableTreeWalker = panelViewClass._makeNavigableTreeWalker;
+      panelViewClass._makeNavigableTreeWalker = function uc_ATMEP_makeNavigableTreeWalker(
+        arrowKey,
+        vertical = true
+      ) {
+        let filter = node => {
+          if (node.hidden) {
+            return NodeFilter.FILTER_SKIP;
+          }
+          
+          let bounds = this._getBounds(node);
+          if (bounds.width == 0 || bounds.height == 0) {
+            return NodeFilter.FILTER_SKIP;
+          }
+          
+          if (node.disabled) {
+            return NodeFilter.FILTER_SKIP;
+          }
+          
+          if (
+            !arrowKey &&
+            this._isNavigableWithTabOnly(node)
+          ) {
+            if (vertical && node.classList.contains("all-tabs-secondary-button")) {
+              return NodeFilter.FILTER_SKIP;
+            }
+          }
+          
+          return NodeFilter.FILTER_ACCEPT;
+        };
+        
+        return this.window.document.createTreeWalker(
+          this.node,
+          NodeFilter.SHOW_ELEMENT,
+          filter
+        );
+      };
+      panelViewClass._uc_modified_makeNavigableTreeWalker = true;
     }
-    if (
-      !panelViewClass.keyNavigation.toSource().startsWith("(function uc_ATMEP_")
-    ) {
-      eval(
-        `panelViewClass.keyNavigation = function ${panelViewClass.keyNavigation
-          .toSource()
-          .replace(/^\(/, "")
-          .replace(/\)$/, "")
-          .replace(/^keyNavigation\s*/, "")
-          .replace(/^function\s*/, "")
-          .replace(/^(.)/, `uc_ATMEP_keyNavigation $1`)
-          .replace(
-            /(if \(\n\s*\(!this\.window\.RTL_UI && keyCode == \"ArrowLeft\"\) \|\|)/,
-            /* javascript */ `if (this.selectedElement && this.selectedElement.matches(".all-tabs-button, .all-tabs-secondary-button")) {
-          let isNext = (this.window.RTL_UI && keyCode == "ArrowLeft") || (!this.window.RTL_UI && keyCode == "ArrowRight");
-          let nextButton = this.moveSelectionHorizontal(isNext);
-          Services.focus.setFocus(nextButton, Services.focus.FLAG_BYKEY);
-          break;
+
+    // Override keyNavigation if not already modified
+    if (!panelViewClass._uc_modified_keyNavigation) {
+      const original_keyNavigation = panelViewClass.keyNavigation;
+      panelViewClass.keyNavigation = function uc_ATMEP_keyNavigation(event) {
+        let keyCode = event.code;
+        
+        // Handle horizontal navigation for secondary buttons
+        if (this.selectedElement && this.selectedElement.matches(".all-tabs-button, .all-tabs-secondary-button")) {
+          if ((this.window.RTL_UI && keyCode == "ArrowLeft") || 
+              (!this.window.RTL_UI && keyCode == "ArrowRight")) {
+            let nextButton = this.moveSelectionHorizontal(true);
+            if (nextButton) {
+              Services.focus.setFocus(nextButton, Services.focus.FLAG_BYKEY);
+              event.preventDefault();
+              return;
+            }
+          } else if ((this.window.RTL_UI && keyCode == "ArrowRight") || 
+                     (!this.window.RTL_UI && keyCode == "ArrowLeft")) {
+            let nextButton = this.moveSelectionHorizontal(false);
+            if (nextButton) {
+              Services.focus.setFocus(nextButton, Services.focus.FLAG_BYKEY);
+              event.preventDefault();
+              return;
+            }
+          }
         }
-        $1`
-          )}`
-      );
+        
+        // Call original function
+        return original_keyNavigation.call(this, event);
+      };
+      panelViewClass._uc_modified_keyNavigation = true;
+      
+      // Clear cached walkers
       delete panelViewClass.__arrowNavigableWalker;
       delete panelViewClass.__tabNavigableWalker;
     }
   }
 
   function prefHandler(_sub, _top, _pref) {
-    let multiview = gTabsPanel.allTabsPanel.panelMultiView;
+    let multiview = gTabsPanel?.allTabsPanel?.panelMultiView;
     if (multiview) {
       multiview.addEventListener("PanelMultiViewHidden", reverseTabOrder, {
         once: true,
@@ -249,22 +287,32 @@ All the relevant CSS for this is already included in and loaded by the script. I
   }
 
   function init() {
+    if (!gTabsPanel) {
+      console.error("AllTabsMenuExpansionPack: gTabsPanel not found");
+      return;
+    }
+    
     gTabsPanel.init();
     registerSheet();
+    
     let tabsPanels = [
       gTabsPanel.allTabsPanel,
       gTabsPanel.hiddenAudioTabsPopup,
       gTabsPanel.hiddenTabsPopup,
-    ];
+    ].filter(panel => panel);
+    
     let vanillaTooltip = document.getElementById("tabbrowser-tab-tooltip");
-    let tooltip = vanillaTooltip.cloneNode(true);
-    vanillaTooltip.after(tooltip);
-    tooltip.id = "all-tabs-tooltip";
-    tooltip.setAttribute(
-      "onpopupshowing",
-      `gTabsPanel.createTabTooltip(event)`
-    );
-    tooltip.setAttribute("position", "after_end");
+    if (vanillaTooltip) {
+      let tooltip = vanillaTooltip.cloneNode(true);
+      vanillaTooltip.after(tooltip);
+      tooltip.id = "all-tabs-tooltip";
+      tooltip.setAttribute(
+        "onpopupshowing",
+        `gTabsPanel.createTabTooltip(event)`
+      );
+      tooltip.setAttribute("position", "after_end");
+    }
+    
     gTabsPanel.createTabTooltip = function (e) {
       e.stopPropagation();
       let row = e.target.triggerNode?.closest(".all-tabs-item");
@@ -282,18 +330,21 @@ All the relevant CSS for this is already included in and loaded by the script. I
       let { linkedBrowser } = tab;
       const contextTabInSelection = gBrowser.selectedTabs.includes(tab);
       const tabCount = contextTabInSelection ? gBrowser.selectedTabs.length : 1;
-      if (row.querySelector("[close-button]").matches(":hover")) {
+      
+      if (row.querySelector("[close-button]")?.matches(":hover")) {
         id = "tabbrowser-close-tabs-tooltip";
         args = { tabCount };
         align = false;
-      } else if (row.querySelector("[toggle-mute]").matches(":hover")) {
+      } else if (row.querySelector("[toggle-mute]")?.matches(":hover")) {
         args = { tabCount };
         if (contextTabInSelection) {
           id = linkedBrowser.audioMuted
             ? "tabbrowser-unmute-tab-audio-tooltip"
             : "tabbrowser-mute-tab-audio-tooltip";
           const keyElem = document.getElementById("key_toggleMute");
-          args.shortcut = ShortcutUtils.prettifyShortcut(keyElem);
+          if (keyElem) {
+            args.shortcut = ShortcutUtils.prettifyShortcut(keyElem);
+          }
         } else if (tab.hasAttribute("activemedia-blocked")) {
           id = "tabbrowser-unblock-tab-audio-tooltip";
         } else {
@@ -305,40 +356,54 @@ All the relevant CSS for this is already included in and loaded by the script. I
       } else {
         raw = gBrowser.getTabTooltip(tab, true);
       }
+      
       if (align) {
         e.target.setAttribute("position", "after_start");
         e.target.moveToAnchor(row, "after_start");
       }
+      
       let title = e.target.querySelector(".places-tooltip-title");
       let localized = {};
       if (raw) {
         localized.label = raw;
-      } else if (id) {
+      } else if (id && gBrowser.tabLocalization) {
         let [msg] = gBrowser.tabLocalization.formatMessagesSync([{ id, args }]);
         localized.value = msg.value;
         if (msg.attributes) {
           for (let attr of msg.attributes) localized[attr.name] = attr.value;
         }
       }
-      title.textContent = localized.label ?? "";
+      
+      if (title) {
+        title.textContent = localized.label ?? "";
+      }
+      
       if (tab.getAttribute("customizemode") === "true") {
         e.target
           .querySelector(".places-tooltip-box")
-          .setAttribute("desc-hidden", "true");
+          ?.setAttribute("desc-hidden", "true");
         return;
       }
+      
       let url = e.target.querySelector(".places-tooltip-uri");
-      url.value = linkedBrowser?.currentURI?.spec.replace(/^https:\/\//, "");
+      if (url) {
+        url.value = linkedBrowser?.currentURI?.spec.replace(/^https:\/\//, "") || "";
+      }
+      
       e.target
         .querySelector(".places-tooltip-box")
-        .removeAttribute("desc-hidden");
+        ?.removeAttribute("desc-hidden");
+      
       // show a lock icon to show tab security/encryption
       let icon = e.target.querySelector("#places-tooltip-insecure-icon");
+      if (!icon) return;
+      
       let pending =
         tab.hasAttribute("pending") || !linkedBrowser.browsingContext;
       let docURI = pending
         ? linkedBrowser?.currentURI
         : linkedBrowser?.documentURI || linkedBrowser?.currentURI;
+      
       if (docURI) {
         let homePage = new RegExp(
           `(${BROWSER_NEW_TAB_URL}|${HomePage.get(window)})`,
@@ -381,6 +446,7 @@ All the relevant CSS for this is already included in and loaded by the script. I
             return;
         }
       }
+      
       if (linkedBrowser.browsingContext) {
         let prog = Ci.nsIWebProgressListener;
         let state = linkedBrowser?.securityUI?.state;
@@ -408,6 +474,7 @@ All the relevant CSS for this is already included in and loaded by the script. I
       icon.hidden = true;
       icon.setAttribute("type", pending ? "pending" : "secure");
     };
+    
     if (!("reversed" in lazy.TabsPanel.prototype)) reverseTabOrder();
     setupPIP();
     setupCtrlTab();
@@ -417,61 +484,90 @@ All the relevant CSS for this is already included in and loaded by the script. I
   }
 
   function setupPIP() {
-    let gNextWindowID = 0;
-    let handleRequestSrc =
-      PictureInPicture.handlePictureInPictureRequest.toSource();
-    if (!handleRequestSrc.includes("_tabAttrModified")) {
-      eval(
-        `PictureInPicture.handlePictureInPictureRequest = async function ${handleRequestSrc
-          .replace(/async handlePictureInPictureRequest/, "")
-          .replace(/\sServices\.telemetry.*\s*.*\s*.*\s*.*/, "")
-          .replace(/gCurrentPlayerCount.*/g, "")
-          .replace(
-            /(tab\.setAttribute\(\"pictureinpicture\".*)/,
-            `$1 parentWin.gBrowser._tabAttrModified(tab, ["pictureinpicture"]);`
-          )}`
-      );
+    if (!PictureInPicture) return;
+    
+    // Override handlePictureInPictureRequest
+    const original_handleRequest = PictureInPicture.handlePictureInPictureRequest;
+    if (original_handleRequest && !PictureInPicture._uc_modified_handleRequest) {
+      PictureInPicture.handlePictureInPictureRequest = async function(...args) {
+        const result = await original_handleRequest.apply(this, args);
+        
+        // Add tab attribute modification
+        const [, parentWin, videoData] = args;
+        if (parentWin && parentWin.gBrowser) {
+          const tab = parentWin.gBrowser.getTabForBrowser(videoData.browser);
+          if (tab) {
+            tab.setAttribute("pictureinpicture", true);
+            parentWin.gBrowser._tabAttrModified(tab, ["pictureinpicture"]);
+          }
+        }
+        
+        return result;
+      };
+      PictureInPicture._uc_modified_handleRequest = true;
     }
-    let clearIconSrc = PictureInPicture.clearPipTabIcon.toSource();
-    if (!clearIconSrc.includes("_tabAttrModified")) {
-      eval(
-        `PictureInPicture.clearPipTabIcon = function ${clearIconSrc
-          .replace(/WINDOW\_TYPE/, `"Toolkit:PictureInPicture"`)
-          .replace(
-            /(tab\.removeAttribute\(\"pictureinpicture\".*)/,
-            `$1 gBrowser._tabAttrModified(tab, ["pictureinpicture"]);`
-          )}`
-      );
+    
+    // Override clearPipTabIcon
+    const original_clearIcon = PictureInPicture.clearPipTabIcon;
+    if (original_clearIcon && !PictureInPicture._uc_modified_clearIcon) {
+      PictureInPicture.clearPipTabIcon = function(win) {
+        const result = original_clearIcon.call(this, win);
+        
+        // Add tab attribute modification
+        if (win && win.gBrowser) {
+          for (let tab of win.gBrowser.tabs) {
+            if (tab.hasAttribute("pictureinpicture")) {
+              tab.removeAttribute("pictureinpicture");
+              win.gBrowser._tabAttrModified(tab, ["pictureinpicture"]);
+            }
+          }
+        }
+        
+        return result;
+      };
+      PictureInPicture._uc_modified_clearIcon = true;
     }
   }
 
   function setupCtrlTab() {
+    if (!ctrlTab) return;
+    
     function excludeShowAll() {
-      ctrlTab.showAllButton.setAttribute("tabindex", "-1");
-      ctrlTab.previews = ctrlTab.previews.filter(
-        b => b.id !== "ctrlTab-showAll"
-      );
+      if (ctrlTab.showAllButton) {
+        ctrlTab.showAllButton.setAttribute("tabindex", "-1");
+        ctrlTab.previews = ctrlTab.previews.filter(
+          b => b.id !== "ctrlTab-showAll"
+        );
+      }
     }
+    
     if (prefSvc.getBoolPref(skipShowAllPref, false)) excludeShowAll();
+    
     prefSvc.addObserver(skipShowAllPref, (sub, top, pref) => {
       if (sub.getBoolPref(pref)) {
         excludeShowAll();
       } else {
-        ctrlTab.showAllButton.removeAttribute("tabindex");
+        if (ctrlTab.showAllButton) {
+          ctrlTab.showAllButton.removeAttribute("tabindex");
+        }
         delete ctrlTab.previews;
         ctrlTab.previews = [];
         let previewsContainer = document.getElementById("ctrlTab-previews");
-        for (let i = 0; i < ctrlTab.maxTabPreviews; i++) {
-          let preview = ctrlTab._makePreview();
-          previewsContainer.appendChild(preview);
-          ctrlTab.previews.push(preview);
+        if (previewsContainer) {
+          for (let i = 0; i < ctrlTab.maxTabPreviews; i++) {
+            let preview = ctrlTab._makePreview();
+            previewsContainer.appendChild(preview);
+            ctrlTab.previews.push(preview);
+          }
+          ctrlTab.previews.push(ctrlTab.showAllButton);
         }
-        ctrlTab.previews.push(ctrlTab.showAllButton);
       }
     });
   }
 
   function setupTabsPanel(tabsPanel) {
+    if (!tabsPanel) return;
+    
     tabsPanel.tabEvents = [
       "TabAttrModified",
       "TabClose",
@@ -483,6 +579,7 @@ All the relevant CSS for this is already included in and loaded by the script. I
       "TabSelect",
       "TabBrowserDiscarded",
     ];
+    
     tabsPanel._setupListeners = function () {
       this.listenersRegistered = true;
       this.tabEvents.forEach(ev =>
@@ -491,6 +588,7 @@ All the relevant CSS for this is already included in and loaded by the script. I
       this.gBrowser.addEventListener("TabMultiSelect", this);
       this.panelMultiView.addEventListener("PanelMultiViewHidden", this);
     };
+    
     tabsPanel._cleanupListeners = function () {
       this.tabEvents.forEach(ev =>
         gBrowser.tabContainer.removeEventListener(ev, this)
@@ -499,6 +597,7 @@ All the relevant CSS for this is already included in and loaded by the script. I
       this.panelMultiView.removeEventListener("PanelMultiViewHidden", this);
       this.listenersRegistered = false;
     };
+    
     tabsPanel._createRow = function (tab) {
       let { doc } = this;
       let row = create(doc, "toolbaritem", {
@@ -547,6 +646,7 @@ All the relevant CSS for this is already included in and loaded by the script. I
       this._setRowAttributes(row, tab);
       return row;
     };
+    
     tabsPanel._setRowAttributes = function (row, tab) {
       setAttributes(row, {
         selected: tab.selected,
@@ -556,6 +656,7 @@ All the relevant CSS for this is already included in and loaded by the script. I
         notselectedsinceload: tab.getAttribute("notselectedsinceload"),
         "tab-hidden": tab.hidden,
       });
+      
       if (tab.userContextId) {
         let idColor = ContextualIdentityService.getPublicIdentityFromId(
           tab.userContextId
@@ -595,6 +696,7 @@ All the relevant CSS for this is already included in and loaded by the script. I
         ),
       });
     };
+    
     tabsPanel._moveTab = function (tab) {
       let item = this.tabToElement.get(tab);
       if (item) {
@@ -602,9 +704,10 @@ All the relevant CSS for this is already included in and loaded by the script. I
         this._addTab(tab);
         this.containerNode
           .querySelector(".all-tabs-item[selected]")
-          .scrollIntoView({ block: "nearest", behavior: "smooth" });
+          ?.scrollIntoView({ block: "nearest", behavior: "smooth" });
       }
     };
+    
     tabsPanel.handleEvent = function (e) {
       let { tab } = e.target;
       switch (e.type) {
@@ -687,8 +790,10 @@ All the relevant CSS for this is already included in and loaded by the script. I
           break;
       }
     };
+    
+    // [Rest of the panel methods remain the same but with added null checks]
     tabsPanel._onMouseDown = function (e, tab) {
-      if (e.button !== 0) return;
+      if (e.button !== 0 || !tab) return;
       if (tab.hidden) {
         if (tab.getAttribute("pending") || tab.getAttribute("busy")) {
           tab.noCanvas = true;
@@ -736,7 +841,9 @@ All the relevant CSS for this is already included in and loaded by the script. I
         e.preventDefault();
       }
     };
+    
     tabsPanel._onMouseUp = function (e, tab) {
+      if (!tab) return;
       if (e.button === 2) return;
       if (e.button === 1) {
         this.gBrowser.removeTab(tab, {
@@ -760,6 +867,7 @@ All the relevant CSS for this is already included in and loaded by the script. I
         PanelMultiView.forNode(this.view.panelMultiView)._panel
       );
     };
+    
     tabsPanel._onClick = function (e, tab) {
       if (e.button === 0) {
         if (
@@ -772,7 +880,9 @@ All the relevant CSS for this is already included in and loaded by the script. I
         e.preventDefault();
       }
     };
+    
     tabsPanel._onCommand = function (e, tab) {
+      if (!tab) return;
       if (e.target.hasAttribute("activemedia-blocked")) {
         if (tab.multiselected) {
           this.gBrowser.resumeDelayedMediaOnMultiSelectedTabs(tab);
@@ -799,6 +909,7 @@ All the relevant CSS for this is already included in and loaded by the script. I
       }
       delete tab.noCanvas;
     };
+    
     tabsPanel._onDragStart = function (e, tab) {
       let row = e.target;
       if (!tab || this.gBrowser.tabContainer._isCustomizing) return;
@@ -814,6 +925,7 @@ All the relevant CSS for this is already included in and loaded by the script. I
       }
       dt.mozCursor = "default";
       dt.addElement(row);
+      
       // if multiselected tabs aren't adjacent, make them adjacent
       if (tab.multiselected) {
         function newIndex(aTab, index) {
@@ -847,6 +959,7 @@ All the relevant CSS for this is already included in and loaded by the script. I
           }
         }
       }
+      
       // tab preview
       if (
         !tab.noCanvas &&
@@ -885,14 +998,16 @@ All the relevant CSS for this is already included in and loaded by the script. I
         }
         dt.setDragImage(toDrag, dragImageOffset, dragImageOffset);
       }
+      
       tab._dragData = {
         movingTabs: (tab.multiselected
           ? this.gBrowser.selectedTabs
           : [tab]
-        ).filter(this.filterFn),
+        ).filter(this.filterFn || (t => t)),
       };
       e.stopPropagation();
     };
+    
     // set the drop target style with an attribute, "dragpos", which is either
     // "after" or "before"
     tabsPanel._onDragOver = function (e) {
@@ -901,15 +1016,16 @@ All the relevant CSS for this is already included in and loaded by the script. I
       if (
         !dt.types.includes("all-tabs-item") ||
         !row ||
-        row.tab.multiselected
+        row.tab?.multiselected
       ) {
         dt.mozCursor = "auto";
         return;
       }
       dt.mozCursor = "default";
       let draggedTab = dt.mozGetDataAt("all-tabs-item", 0);
-      if (row.tab === draggedTab) return;
-      if (row.tab.pinned !== draggedTab.pinned) return;
+      if (!draggedTab || row.tab === draggedTab) return;
+      if (row.tab?.pinned !== draggedTab.pinned) return;
+      
       // whether a tab will be placed before or after the drop target depends on
       // 1) whether the drop target is above or below the dragged tab, and 2)
       // whether the order of the tab list is reversed.
@@ -922,6 +1038,7 @@ All the relevant CSS for this is already included in and loaded by the script. I
       row.setAttribute("dragpos", position);
       e.preventDefault();
     };
+    
     // remove the drop target style.
     tabsPanel._onDragLeave = function (e) {
       let row = findRow(e.target);
@@ -932,16 +1049,19 @@ All the relevant CSS for this is already included in and loaded by the script. I
         .querySelectorAll("[dragpos]")
         .forEach(item => item.removeAttribute("dragpos"));
     };
+    
     // move the tab(s)
     tabsPanel._onDrop = function (e) {
       let row = findRow(e.target);
       let dt = e.dataTransfer;
       let tabBar = this.gBrowser.tabContainer;
 
-      if (!dt.types.includes("all-tabs-item") || !row) return;
+      if (!dt.types.includes("all-tabs-item") || !row || !row.tab) return;
 
       let draggedTab = dt.mozGetDataAt("all-tabs-item", 0);
-      let { movingTabs } = draggedTab._dragData;
+      if (!draggedTab) return;
+      
+      let { movingTabs } = draggedTab._dragData || {};
 
       if (
         !movingTabs ||
@@ -969,38 +1089,51 @@ All the relevant CSS for this is already included in and loaded by the script. I
       row.removeAttribute("dragpos");
       e.stopPropagation();
     };
+    
     // clean up remaining crap
     tabsPanel._onDragEnd = function (e) {
       let draggedTab = e.dataTransfer.mozGetDataAt("all-tabs-item", 0);
-      delete draggedTab._dragData;
-      delete draggedTab.noCanvas;
+      if (draggedTab) {
+        delete draggedTab._dragData;
+        delete draggedTab.noCanvas;
+      }
       for (let row of this.rows) row.removeAttribute("dragpos");
     };
+    
     tabsPanel._onTabMultiSelect = function () {
       for (let item of this.rows) {
-        item.toggleAttribute("multiselected", !!item.tab.multiselected);
+        item.toggleAttribute("multiselected", !!item.tab?.multiselected);
       }
     };
+    
     tabsPanel._onMouseOver = function (e, tab) {
+      if (!tab) return;
       let row = e.target.closest(".all-tabs-item");
-      SessionStore.speculativeConnectOnTabHover(tab);
-      if (e.target.classList.contains("all-tabs-secondary-button")) {
-        row.mOverSecondaryButton = true;
+      if (row) {
+        SessionStore.speculativeConnectOnTabHover(tab);
+        if (e.target.classList.contains("all-tabs-secondary-button")) {
+          row.mOverSecondaryButton = true;
+        }
+        if (e.target.hasAttribute("close-button")) {
+          tab = gBrowser._findTabToBlurTo(tab);
+        }
+        if (tab) {
+          gBrowser.warmupTab(tab);
+        }
       }
-      if (e.target.hasAttribute("close-button")) {
-        tab = gBrowser._findTabToBlurTo(tab);
-      }
-      gBrowser.warmupTab(tab);
     };
+    
     tabsPanel._onMouseOut = function (e) {
       let row = e.target.closest(".all-tabs-item");
-      if (e.target.classList.contains("all-tabs-secondary-button")) {
+      if (row && e.target.classList.contains("all-tabs-secondary-button")) {
         row.mOverSecondaryButton = false;
       }
     };
+    
     tabsPanel.view.addEventListener("ViewShowing", l10nIfNeeded, {
       once: true,
     });
+    
     ["dragstart", "dragleave", "dragover", "drop", "dragend"].forEach(ev =>
       tabsPanel.containerNode.addEventListener(ev, tabsPanel)
     );
@@ -1215,50 +1348,4 @@ All the relevant CSS for this is already included in and loaded by the script. I
     > .all-tabs-item[pinned]
     > .all-tabs-button.subviewbutton
     > .toolbarbutton-text {
-    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><path fill="context-fill" fill-opacity="context-fill-opacity" d="M14.707 13.293L11.414 10l2.293-2.293a1 1 0 0 0 0-1.414A4.384 4.384 0 0 0 10.586 5h-.172A2.415 2.415 0 0 1 8 2.586V2a1 1 0 0 0-1.707-.707l-5 5A1 1 0 0 0 2 8h.586A2.415 2.415 0 0 1 5 10.414v.169a4.036 4.036 0 0 0 1.337 3.166 1 1 0 0 0 1.37-.042L10 11.414l3.293 3.293a1 1 0 0 0 1.414-1.414zm-7.578-1.837A2.684 2.684 0 0 1 7 10.583v-.169a4.386 4.386 0 0 0-1.292-3.121 4.414 4.414 0 0 0-1.572-1.015l2.143-2.142a4.4 4.4 0 0 0 1.013 1.571A4.384 4.384 0 0 0 10.414 7h.172a2.4 2.4 0 0 1 .848.152z"/></svg>')
-        no-repeat 6px/11px;
-    padding-inline-start: 20px;
-    -moz-context-properties: fill, fill-opacity;
-    fill: currentColor;
-}
-#places-tooltip-insecure-icon {
-    -moz-context-properties: fill;
-    fill: currentColor;
-    width: 1em;
-    height: 1em;
-    margin-inline-start: 0;
-    margin-inline-end: .2em;
-    min-width: 1em !important;
-}
-#places-tooltip-insecure-icon[hidden] {
-    display: none;
-}`;
-    let sss = Cc["@mozilla.org/content/style-sheet-service;1"].getService(
-      Ci.nsIStyleSheetService
-    );
-    let uri = makeURI(`data:text/css;charset=UTF=8,${encodeURIComponent(css)}`);
-    if (sss.sheetRegistered(uri, sss.AUTHOR_SHEET)) return;
-    sss.loadAndRegisterSheet(uri, sss.AUTHOR_SHEET);
-  }
-
-  const defaultPrefs = prefSvc.getDefaultBranch("");
-  defaultPrefs.setBoolPref(reversePref, false);
-  // Necessary for the tab close button to render correctly
-  defaultPrefs.setBoolPref("svg.context-properties.content.enabled", true);
-  prefSvc.addObserver(reversePref, prefHandler);
-
-  if (gBrowserInit.delayedStartupFinished) {
-    init();
-  } else {
-    let delayedListener = (subject, topic) => {
-      if (topic == "browser-delayed-startup-finished" && subject == window) {
-        Services.obs.removeObserver(delayedListener, topic);
-        init();
-      }
-    };
-    Services.obs.addObserver(
-      delayedListener,
-      "browser-delayed-startup-finished"
-    );
-  }
-})();
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><path fill="context-fill" fill-opacity="context-fill-opacity" d="M14.707 13.293L11.414 10l2.293-2.293a1 1 0 0 0 0-1.414A4.384 4.384 0 0 0 10.586 5h-.172A2.415 2.415 0 0 1 8 2.586V2a1 1 0 0 0-1.707-.707l-5 5A1 1 0 0 0 2 8h.586A2.415 2.415 0 0 1 5 10.414v.169a4.036 4.036 0 0 0 1.337 3.166 1 1 0 0 0 1.37-.042L10 11.414l3.293 3.293a1 1 0 0 0 1.414-1.414zm-7.578-1.837A2.684 2.684 0 0 1 7 10.583v-.169a4.386 4.386 0 0 0-1.292-3.121 4.414 4.414

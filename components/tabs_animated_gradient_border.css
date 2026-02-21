@@ -34,17 +34,18 @@ Thanks to /u/skenera on reddit for suggesting animating background position and 
   pointer-events: none;
   z-index: 0;
 }
-
+#pinned-tabs-container,
 #tabbrowser-arrowscrollbox{
   margin-inline: 0 !important;
   --tab-shadow-max-size: 0px;
 }
+scrollbox[orient="horizontal"] > slot::after,
 .scrollbox-clip[orient="horizontal"] > scrollbox::after{
   content: "";
   display: flex;
   flex-grow: 1 !important;
   position: relative;
-  background-color: var(--lwt-accent-color);
+  background-color: var(--lwt-accent-color,var(--toolbox-bgcolor));
   margin-bottom: 1px;
 }
 
@@ -56,7 +57,7 @@ Thanks to /u/skenera on reddit for suggesting animating background position and 
 #scrollbutton-up,
 #scrollbutton-down,
 #tabbrowser-tabs ~ toolbarbutton{
-  background-color: var(--lwt-accent-color) !important;
+  background-color: var(--lwt-accent-color,var(--toolbox-bgcolor)) !important;
   margin-bottom: 1px !important;
   opacity: 1 !important;
   position: relative;
@@ -64,11 +65,11 @@ Thanks to /u/skenera on reddit for suggesting animating background position and 
 .tabbrowser-tab:hover > .tab-stack > .tab-background:not([selected]),
 .tab-background[multiselected]:not([selected]){
   background-image: linear-gradient(color-mix(in srgb, currentColor 11%, transparent),color-mix(in srgb, currentColor 11%, transparent)) !important;
-  background-color: var(--lwt-accent-color) !important;
+  background-color: var(--lwt-accent-color,var(--toolbox-bgcolor)) !important;
 }
 
 .tabbrowser-tab:not([selected]){ min-height: calc(var(--tab-min-height) - 1px) !important;  }
-.tabbrowser-tab[first-visible-unpinned-tab]{ margin-inline-start: 0 !important; }
+.tabbrowser-tab{ margin-inline-start: 0 !important; }
 
 vbox.tab-background[selected]{
   padding: 0px !important;
@@ -78,10 +79,7 @@ vbox.tab-background[selected]{
   background-clip: padding-box;
   outline: none !important;
 }
-/* This is to override min-height set in non_floating_sharp_tabs.css */
-:root[uidensity="compact"] #tabbrowser-tabs[positionpinnedtabs] .tabbrowser-tab[pinned]{
-  min-height: calc(var(--tab-min-height) -1px) !important;
-}
+
 /* remove selected tab line which isn't very useful with this style */
 .tab-background[selected]::before{
   display: none !important;

@@ -1,125 +1,128 @@
 // ==UserScript==
 // @name           replaceAndGoSearch.uc.js
 // @namespace      http://space.geocities.yahoo.co.jp/gl/alice0775
-// @description    replace selection with clipboard text and go/search
+// @description    Replace selection with clipboard text and go/search
 // @include        main
 // @async          true
-// @compatibility  Firefox 147
-// @author         Alice0775
-// @version        2025/11/15 23:00 Nightly 147
-// @version        2025/02/04 23:00 Bug 1880913 - Move BrowserSearch out of browser.js
-// @version        2024/12/31 23:00
-// @version        2021/09/04 0700
-// @version        2021/08/21 12:00
+// @author         Alice0775 (Updated for 2026 compatibility)
+// @compatibility  Firefox 149+
+// @version        2026.02.04
 // ==/UserScript==
-var replaceAndGoSearch = {
 
+var replaceAndGoSearch = {
   init: async function() {
-    this.urlBarMenu();
-    if (!Services.search.isInitialized) {
-      await Services.search.init();
+    // 1. Updated SearchService module path for modern Firefox
+    const lazy = {};
+    ChromeUtils.defineESModuleGetters(lazy, {
+      SearchService: "resource:///modules/SearchService.sys.mjs",
+    });
+
+    // Ensure Search Service is ready
+    if (!lazy.SearchService.isInitialized) {
+      await lazy.SearchService.init();
     }
+
     this.urlBarMenu();
     this.searchBarMenu();
+
     window.addEventListener('aftercustomization', this, false);
     Services.prefs.addObserver('browser.search.widget.inNavBar', this, false);
     window.addEventListener('unload', this, false);
   },
 
-  uninit: function(){
+  uninit: function() {
     window.removeEventListener('aftercustomization', this, false);
     Services.prefs.removeObserver('browser.search.widget.inNavBar', this);
     window.removeEventListener('unload', this, false);
   },
-  
+
   urlBarMenu: function() {
-    let inputBox = gURLBar.querySelector("moz-input-box");
-    let contextMenu = inputBox.menupopup;
+    if (!window.gURLBar) return;
+
+    // Use a more robust way to find the context menu
+    let contextMenu = document.getElementById("textbox-contextmenu") || 
+                      gURLBar.querySelector("moz-input-box")?.menupopup;
+    
+    if (!contextMenu) return;
+
     let insertLocation = contextMenu.querySelector('[cmd="cmd_paste"]');
+    if (!insertLocation) return;
+
+    if (contextMenu.querySelector("#replace-and-go")) return;
 
     let replaceAndGo = document.createXULElement("menuitem");
     replaceAndGo.id = "replace-and-go";
     replaceAndGo.setAttribute("label", "Replace and Go");
-    replaceAndGo.setAttribute("anonid", "replace-and-go");
     replaceAndGo.setAttribute("accesskey", "r");
+    
     replaceAndGo.addEventListener("command", (event) => {
+      // Modern URLBar handling
       gURLBar._suppressStartQuery = true;
-
       window.goDoCommand("cmd_paste");
-      gURLBar.setResultForCurrentValue(null);
-      gURLBar.handleCommand(event);
-
+      
+      // Force the URL bar to treat the new value as a confirmed navigation
+      if (gURLBar.handleCommand) {
+        gURLBar.handleCommand(event);
+      }
       gURLBar._suppressStartQuery = false;
     });
 
-    if (!contextMenu.querySelector("#replace-and-go")) {
-      insertLocation.insertAdjacentElement("afterend", replaceAndGo);
-    }
+    insertLocation.insertAdjacentElement("afterend", replaceAndGo);
 
     contextMenu.addEventListener("popupshowing", () => {
-      // Close the results pane when the input field contextual menu is open,
-      // because paste and go doesn't want a result selection.
-      gURLBar.view.close();
-
-
-      let controller = document.commandDispatcher.getControllerForCommand(
-        "cmd_paste"
-      );
-      let enabled = controller.isCommandEnabled("cmd_paste");
-      if (enabled) {
-        replaceAndGo.removeAttribute("disabled");
-      } else {
-        replaceAndGo.setAttribute("disabled", "true");
+      if (gURLBar.view && gURLBar.view.isOpen) {
+        gURLBar.view.close();
       }
+
+      let controller = document.commandDispatcher.getControllerForCommand("cmd_paste");
+      let enabled = controller && controller.isCommandEnabled("cmd_paste");
+      replaceAndGo.toggleAttribute("disabled", !enabled);
     });
   },
 
-
   searchBarMenu: function() {
+    let searchBar = document.getElementById('searchbar') || document.getElementById('searchbar-new');
+    if (!searchBar) return;
+
+    let contextMenu = searchBar.querySelector(".textbox-contextmenu");
+    if (!contextMenu || contextMenu.querySelector("#replace-and-search")) return;
+
     let replaceAndSearch = document.createXULElement("menuitem");
     replaceAndSearch.id = "replace-and-search";
     replaceAndSearch.setAttribute("label", "Replace & Search");
-    replaceAndSearch.setAttribute("anonid", "replace-and-search");
     replaceAndSearch.setAttribute("accesskey", "r");
+
     replaceAndSearch.addEventListener("command", (event) => {
-
-      goDoCommand("cmd_paste");
-      document.getElementById("searchbar").handleSearchCommand(event);
-
+      window.goDoCommand("cmd_paste");
+      if (searchBar.handleSearchCommand) {
+        searchBar.handleSearchCommand(event);
+      } else if (searchBar.handleCommand) {
+        searchBar.handleCommand(event);
+      }
     });
 
-    let contextMenu = document.querySelector("#searchbar .textbox-contextmenu");
-    if (!contextMenu)
-      return;
-
     contextMenu.addEventListener("popupshowing", () => {
-      if (!contextMenu.querySelector("#replace-and-search")) {
-        let insert = contextMenu.querySelector(".searchbar-paste-and-search");
+      let insert = contextMenu.querySelector(".searchbar-paste-and-search") ||
+                   contextMenu.querySelector("#paste-and-go") ||
+                   contextMenu.querySelector('[cmd="cmd_paste"]');
+      
+      if (insert && !contextMenu.querySelector("#replace-and-search")) {
         insert.insertAdjacentElement("afterend", replaceAndSearch);
       }
-      // Close the results pane when the input field contextual menu is open,
-      // because paste and go doesn't want a result selection.
 
-      let controller = document.commandDispatcher.getControllerForCommand(
-        "cmd_paste"
-      );
-      let enabled = controller.isCommandEnabled("cmd_paste");
-      if (enabled) {
-        replaceAndSearch.removeAttribute("disabled");
-      } else {
-        replaceAndSearch.setAttribute("disabled", "true");
-      }
+      let controller = document.commandDispatcher.getControllerForCommand("cmd_paste");
+      let enabled = controller && controller.isCommandEnabled("cmd_paste");
+      replaceAndSearch.toggleAttribute("disabled", !enabled);
     });
   },
 
   observe(aSubject, aTopic, aPrefstring) {
     if (aTopic == 'nsPref:changed') {
-      // 設定が変更された時の処理
-      setTimeout(() => {this.searchBarMenu();}, 0);
+      setTimeout(() => { this.searchBarMenu(); }, 100);
     }
   },
 
-  handleEvent: function(event){
+  handleEvent: function(event) {
     switch (event.type) {
       case "aftercustomization":
         this.urlBarMenu();
@@ -130,21 +133,17 @@ var replaceAndGoSearch = {
         break;
     }
   }
-}
+};
 
-
-// We should only start the redirection if the browser window has finished
-// starting up. Otherwise, we should wait until the startup is done.
+// Initialization Block
 if (gBrowserInit.delayedStartupFinished) {
   replaceAndGoSearch.init();
 } else {
   let delayedStartupFinished = (subject, topic) => {
-    if (topic == "browser-delayed-startup-finished" &&
-        subject == window) {
+    if (topic == "browser-delayed-startup-finished" && subject == window) {
       Services.obs.removeObserver(delayedStartupFinished, topic);
       replaceAndGoSearch.init();
     }
   };
-  Services.obs.addObserver(delayedStartupFinished,
-                           "browser-delayed-startup-finished");
+  Services.obs.addObserver(delayedStartupFinished, "browser-delayed-startup-finished");
 }
