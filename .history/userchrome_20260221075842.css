@@ -10,7 +10,7 @@
 @import url(uc-popups.css);
 @import url(uc-search-mode-icons.css);
 @import url(uc-extensions.css);
-@import url(uc-unified-extensions.css);
+/*@import url(uc-unified-extensions.css);*/
 @import url(uc-sidebar.css);
 @import url(components/autohide_sidebar.css);
 @import url(uc-tabs.css);
@@ -25,11 +25,11 @@
 /*@import url(components/centered_tab_content.css);*/
 /*@import url(components/tab_line_loading_indicator.css);*/
 /*@import url(components/dark_checkboxes_and_radios.css);*/
-/*@import url(components/floating-findbar-on-top.css);*/
-@import url(components/compact_extensions_panel.css);
-/*@import url(components/function-side-toolbar.css);*/
+/*@import url(components/floating-findbar-on-top.css);
+/* @import url(components/compact_extensions_panel.css);
+ /*@import url(components/function-side-toolbar.css);*/
 @import url(components/autohide_bookmarks_toolbar.css);
-@import url(components/popout_bookmarks_bar_on_hover.css);
+/* @import url(components/popout_bookmarks_bar_on_hover.css);*/
 @import url(custom-chrome.css);
 
 /* Remove Tab When Only One *
@@ -107,11 +107,11 @@
   background-color: rgba(63, 224, 76, 0.791) !important;
 }
 
-
-#private-browsing-indicator-with-label .private-browsing-indicator-icon {
-  height: 24px !important;
-  width: 24px !important;
-}
+/*
+ #private-browsing-indicator-with-label .private-browsing-indicator-icon {
+     height: 24px !important;
+     width: 24px !important;
+ }*/
 
 :root,
 :root[lang^="en"] {
@@ -717,21 +717,21 @@ See the above repository for updates as well as full license text. */
  }
 
  /****TEST  2 ***/
-/* indicator for multiselected tabs */
-.tabbrowser-tab[multiselected="true"] .tab-stack .tab-content {
-  box-shadow: inset 2px 0 0 Highlight,
-    inset -2px 0 0 Highlight,
-    inset 0 2px 0 Highlight,
-    inset 0 -2px 0 Highlight !important;
-}
+/* indicator for multiselected tabs *
+ .tabbrowser-tab[multiselected="true"] .tab-stack .tab-content {
+     box-shadow: inset 2px 0 0 Highlight,
+         inset -2px 0 0 Highlight,
+         inset 0 2px 0 Highlight,
+         inset 0 -2px 0 Highlight !important;
+ }
 
-/* test 3 */
-/* Hide 'this time, search with' in url dropdown */
-.search-panel-one-offs-header.search-panel-header {
-  display: none !important;
-}
+ /* test 3 */
+/* Hide 'this time, search with' in url dropdown *
+ .search-panel-one-offs-header.search-panel-header {
+     display: none !important;
+ }
 
-/* Hide page actions (bookmark star  & zoom), show them on hover *
+ /* Hide page actions (bookmark star  & zoom), show them on hover *
  #page-action-buttons,
  .urlbar-page-action {
      /*margin-inline-end: calc(-16px - 2 * var(--urlbar-icon-padding) );*
@@ -1262,7 +1262,7 @@ html,
      --lwt-tabs-border-color: rgba(60, 37, 153, 0.914) !important;
  }
 
- 
+ /*
  .tab-label-container[textoverflow][labeldirection="ltr"]:not([pinned]),
  .tab-label-container[textoverflow]:not([labeldirection],
      [pinned]):-moz-locale-dir(ltr) {
@@ -1334,7 +1334,7 @@ html,
  }
 
  /* Adds an effect to the highlight that wasn't there in Photon */
-/* Remove if unwanted *
+/* Remove if unwanted */
 .tabbrowser-tab:hover>.tab-stack>.tab-background[selected]::before {
   filter: brightness(125%) saturate(150%) !important;
 }
@@ -1364,27 +1364,27 @@ html,
   border: none !important;
 }
 
-/*  Removes the background from the urlbar while not in use  */
-#urlbar:not(:hover):not([breakout][breakout-extend])>#urlbar-background {
-  box-shadow: none !important;
-  background: #0000 !important
-}
+/*  Removes the background from the urlbar while not in use  *
+ #urlbar:not(:hover):not([breakout][breakout-extend])>#urlbar-background {
+     box-shadow: none !important;
+     background: #0000 !important
+ }
 
-/*  Urlbar popup thing  */
-.urlbarView-row {
-  display: none !important
-}
+ /*  Urlbar popup thing  *
+ .urlbarView-row {
+     display: none !important
+ }
 
-.urlbarView-row:nth-child(1),
-.urlbarView-row:nth-child(2) {
-  display: flex !important
-}
+ .urlbarView-row:nth-child(1),
+ .urlbarView-row:nth-child(2) {
+     display: flex !important
+ }
 
-#urlbar-anon-search-settings {
-  margin-inline-start: 0px !important
-}
+ #urlbar-anon-search-settings {
+     margin-inline-start: 0px !important
+ }
 
-/*  Rounded corner in pages  */
+ /*  Rounded corner in pages  */
 /*  layout.css.has-selector.enabled  *
  #main-window:has(#navigator-toolbox[style=""]) #tabbrowser-tabpanels,
  :not([sizemode="fullscreen"]) #tabbrowser-tabpanels {
@@ -1468,12 +1468,11 @@ html,
      border-bottom-left-radius: 10px !important;
      transition: border-radius .2s !important
  }
-*/
-#main-window {
-  background-color: -moz-sidebar
-}
 
-/*
+ #main-window {
+     background-color: -moz-Dialog
+ }
+
  customization-panelWrapper {
      max-width: 30em !important
  }
@@ -1538,16 +1537,16 @@ html,
   background: transparent !important;
 }
 
-/*  Customization navbar fix  */
-#wrapper-urlbar-container {
-  width: 100px !important
-}
+/*  Customization navbar fix  *
+ #wrapper-urlbar-container {
+     width: 100px !important
+ }
 
-[title="Flexible Space"] {
-  display: none !important
-}
+ [title="Flexible Space"] {
+     display: none !important
+ }
 
-/*  Fullscreen thing  *
+ /*  Fullscreen thing  *
  #fullscreen-warning {
      border: none !important;
      background: -moz-Dialog !important
@@ -1693,7 +1692,7 @@ html,
 }
 
 #mainPopupSet #tab-preview-panel .tab-preview-thumbnail-container canvas {
-  border-radius: 8px !important;
+  border-radius: 8px;
 }
 
 #tab-preview-panel {
@@ -1713,12 +1712,12 @@ html,
 /* Source file https://github.com/MrOtherGuy/firefox-csshacks/tree/master/chrome/autohide_sidebar.css made available under Mozilla Public License v. 2.0
 See the above repository for updates as well as full license text. */
 
-/* Makes black favicons more visible on dark background, contrast will be lowered though */
-.tab-icon-image {
-  filter: invert(40%) contrast(250%) saturate(250%) !important;
-}
+/* Makes black favicons more visible on dark background, contrast will be lowered though *
+ .tab-icon-image {
+     filter: invert(40%) contrast(250%) saturate(250%) !important;
+ }
 
-/* Why 100vw? Tab closing requires width animation to end and "none" can't be animated */
+ /* Why 100vw? Tab closing requires width animation to end and "none" can't be animated */
 .tabbrowser-tab[fadein]:not([style^="max-width"]) {
   max-width: 100vw !important;
 }
@@ -1983,30 +1982,30 @@ See the above repository for updates as well as full license text. */
 /* Source file https://github.com/MrOtherGuy/firefox-csshacks/tree/master/chrome/urlbar_connection_type_background_colors.css made available under Mozilla Public License v. 2.0
 See the above repository for updates as well as full license text. */
 
-/* Adds a colored overlay to urlbar based on the type of the connection */
+/* Adds a colored overlay to urlbar based on the type of the connection *
 
-#identity-box::before {
-  position: absolute;
-  display: block;
-  content: "";
-  width: 100%;
-  height: var(--urlbar-height);
-  left: 0;
-  top: 0;
-  pointer-events: none;
-}
+ #identity-box::before {
+     position: absolute;
+     display: block;
+     content: "";
+     width: 100%;
+     height: var(--urlbar-height);
+     left: 0;
+     top: 0;
+     pointer-events: none;
+ }
 
-:root[customizing] #identity-box::before,
-#urlbar[focused] #identity-box::before {
-  display: none
-}
+ :root[customizing] #identity-box::before,
+ #urlbar[focused] #identity-box::before {
+     display: none
+ }
 
-/* https */
-#identity-box.verifiedDomain::before {
-  background-color: rgba(50, 255, 50, 0.2)
-}
+ /* https *
+ #identity-box.verifiedDomain::before {
+     background-color: rgba(50, 255, 50, 0.2)
+ }
 
-/* http: and potentially some other insecure connections like ftp: *
+ /* http: and potentially some other insecure connections like ftp: *
  #identity-box.certErrorPage::before,
  #identity-box.notSecure::before {
      background-color: rgba(255, 50, 50, 0.3)
@@ -2017,17 +2016,17 @@ See the above repository for updates as well as full license text. */
      background-color: rgba(255, 255, 50, 0.2)
  }
 
- /* Extension pages */
-#identity-box.extensionPage::before {
-  background-color: rgba(150, 50, 250, 0.2)
-}
+ /* Extension pages *
+ #identity-box.extensionPage::before {
+     background-color: rgba(150, 50, 250, 0.2)
+ }
 
-/* Internal about: and chrome:// urls (includes reader-view) */
-#identity-box.chromeUI::before {
-  background-color: rgba(50, 150, 250, 0.2)
-}
+ /* Internal about: and chrome:// urls (includes reader-view) *
+ #identity-box.chromeUI::before {
+     background-color: rgba(50, 150, 250, 0.2)
+ }
 
-/* Source file https://github.com/MrOtherGuy/firefox-csshacks/tree/master/chrome/urlbar_info_icons_on_hover.css made available under Mozilla Public License v. 2.0
+ /* Source file https://github.com/MrOtherGuy/firefox-csshacks/tree/master/chrome/urlbar_info_icons_on_hover.css made available under Mozilla Public License v. 2.0
 See the above repository for updates as well as full license text. */
 
 /* Hides info icons (except remote control icon) on the left side of urlbar and shows them when urlbar is hovered. Also hides container name and shows it on hover*
@@ -2050,7 +2049,6 @@ See the above repository for updates as well as full license text. */
   max-width: 300px;
 }
 
-/*
 #urlbar:not(:hover) #userContext-label {
   display: none;
 }
@@ -2059,77 +2057,77 @@ See the above repository for updates as well as full license text. */
 See the above repository for updates as well as full license text. */
 
 /* Replace the button background-colors with a glow effect */
-/* Edit the color choices how you see fit */
-:root {
-  --uc-icon-glow-primary: rgba(106, 249, 249, 0.851);
-  --uc-icon-glow-secondary: cadetblue;
-  --uc-icon-glow-hover-primary: rgb(246, 165, 4);
-  --uc-icon-glow-hover-secondary: rgb(67, 50, 143);
-}
+/* Edit the color choices how you see fit *
+ :root {
+     --uc-icon-glow-primary: rgba(106, 249, 249, 0.851);
+     --uc-icon-glow-secondary: cadetblue;
+     --uc-icon-glow-hover-primary: rgb(246, 165, 4);
+     --uc-icon-glow-hover-secondary: rgb(67, 50, 143);
+ }
 
-/* Make backgrounds transparent */
-.close-icon,
-.urlbar-icon,
-.urlbar-icon-wrapper,
-toolbar .toolbarbutton-1,
-#tabbrowser-tabs toolbarbutton,
-toolbar toolbarbutton>.toolbarbutton-icon,
-toolbar toolbarbutton>.toolbarbutton-badge-stack,
-.titlebar-button,
-#identity-box,
-.identity-box-button,
-#tracking-protection-icon-container,
-.findbar-textbox~toolbarbutton,
-toolbarbutton.scrollbutton-up,
-toolbarbutton.scrollbutton-down,
-toolbarbutton#scrollbutton-up,
-toolbarbutton#scrollbutton-down {
-  background-color: transparent !important;
-  border-color: transparent !important;
-}
+ /* Make backgrounds transparent *
+ .close-icon,
+ .urlbar-icon,
+ .urlbar-icon-wrapper,
+ toolbar .toolbarbutton-1,
+ #tabbrowser-tabs toolbarbutton,
+ toolbar toolbarbutton>.toolbarbutton-icon,
+ toolbar toolbarbutton>.toolbarbutton-badge-stack,
+ .titlebar-button,
+ #identity-box,
+ .identity-box-button,
+ #tracking-protection-icon-container,
+ .findbar-textbox~toolbarbutton,
+ toolbarbutton.scrollbutton-up,
+ toolbarbutton.scrollbutton-down,
+ toolbarbutton#scrollbutton-up,
+ toolbarbutton#scrollbutton-down {
+     background-color: transparent !important;
+     border-color: transparent !important;
+ }
 
-/* Glow effects on hover */
-.close-icon:hover,
-.urlbar-history-dropmarker:hover,
-#page-action-buttons>.urlbar-icon:hover,
-.urlbar-icon-wrapper:hover>.urlbar-icon,
-toolbar .toolbarbutton-1:not([disabled]):hover .toolbarbutton-icon,
-.browser-toolbar toolbarbutton:not([disabled]):hover .toolbarbutton-icon,
-toolbar #downloads-button:hover #downloads-indicator-anchor,
-.identity-box-button:hover,
-#tracking-protection-icon:hover,
-.findbar-textbox~toolbarbutton:not([disabled]):hover,
-toolbarbutton.scrollbutton-up:not([disabled]):hover,
-toolbarbutton.scrollbutton-down:not([disabled]):hover,
-toolbarbutton#scrollbutton-up:not([disabled]):hover,
-toolbarbutton#scrollbutton-down:not([disabled]):hover {
-  filter: drop-shadow(0 0 2px var(--uc-icon-glow-secondary)) drop-shadow(0 0 1px var(--uc-icon-glow-primary))
-}
+ /* Glow effects on hover *
+ .close-icon:hover,
+ .urlbar-history-dropmarker:hover,
+ #page-action-buttons>.urlbar-icon:hover,
+ .urlbar-icon-wrapper:hover>.urlbar-icon,
+ toolbar .toolbarbutton-1:not([disabled]):hover .toolbarbutton-icon,
+ .browser-toolbar toolbarbutton:not([disabled]):hover .toolbarbutton-icon,
+ toolbar #downloads-button:hover #downloads-indicator-anchor,
+ .identity-box-button:hover,
+ #tracking-protection-icon:hover,
+ .findbar-textbox~toolbarbutton:not([disabled]):hover,
+ toolbarbutton.scrollbutton-up:not([disabled]):hover,
+ toolbarbutton.scrollbutton-down:not([disabled]):hover,
+ toolbarbutton#scrollbutton-up:not([disabled]):hover,
+ toolbarbutton#scrollbutton-down:not([disabled]):hover {
+     filter: drop-shadow(0 0 2px var(--uc-icon-glow-secondary)) drop-shadow(0 0 1px var(--uc-icon-glow-primary))
+ }
 
-/* Active states and close window button hover state */
-.browser-toolbar .titlebar-buttonbox>.titlebar-close:hover>.toolbarbutton-icon,
-.close-icon:active,
-.urlbar-history-dropmarker:active,
-#page-action-buttons>.urlbar-icon:active,
-#page-action-buttons>.urlbar-icon[open],
-.urlbar-icon-wrapper:active>.urlbar-icon,
-.urlbar-icon-wrapper[open]>.urlbar-icon,
-toolbar toolbarbutton:not([disabled]):active .toolbarbutton-icon,
-toolbar toolbarbutton:not([disabled])[open] .toolbarbutton-icon,
-.browser-toolbar toolbarbutton:not([disabled]):active .toolbarbutton-icon,
-toolbar #downloads-button:active #downloads-indicator-anchor,
-toolbar #downloads-button[open] #downloads-indicator-anchor,
-.identity-box-button:active,
-#tracking-protection-icon-container[open] #tracking-protection-icon,
-.findbar-textbox~toolbarbutton:not([disabled]):active,
-toolbarbutton.scrollbutton-up:active,
-toolbarbutton.scrollbutton-down:active,
-toolbarbutton#scrollbutton-up:active,
-toolbarbutton#scrollbutton-down:active {
-  filter: drop-shadow(0 0 2px var(--uc-icon-glow-hover-secondary)) drop-shadow(0 0 1px var(--uc-icon-glow-hover-primary))
-}
+ /* Active states and close window button hover state *
+ .browser-toolbar .titlebar-buttonbox>.titlebar-close:hover>.toolbarbutton-icon,
+ .close-icon:active,
+ .urlbar-history-dropmarker:active,
+ #page-action-buttons>.urlbar-icon:active,
+ #page-action-buttons>.urlbar-icon[open],
+ .urlbar-icon-wrapper:active>.urlbar-icon,
+ .urlbar-icon-wrapper[open]>.urlbar-icon,
+ toolbar toolbarbutton:not([disabled]):active .toolbarbutton-icon,
+ toolbar toolbarbutton:not([disabled])[open] .toolbarbutton-icon,
+ .browser-toolbar toolbarbutton:not([disabled]):active .toolbarbutton-icon,
+ toolbar #downloads-button:active #downloads-indicator-anchor,
+ toolbar #downloads-button[open] #downloads-indicator-anchor,
+ .identity-box-button:active,
+ #tracking-protection-icon-container[open] #tracking-protection-icon,
+ .findbar-textbox~toolbarbutton:not([disabled]):active,
+ toolbarbutton.scrollbutton-up:active,
+ toolbarbutton.scrollbutton-down:active,
+ toolbarbutton#scrollbutton-up:active,
+ toolbarbutton#scrollbutton-down:active {
+     filter: drop-shadow(0 0 2px var(--uc-icon-glow-hover-secondary)) drop-shadow(0 0 1px var(--uc-icon-glow-hover-primary))
+ }
 
-/* Source file https://github.com/MrOtherGuy/firefox-csshacks/tree/master/chrome/button_effect_scale_onclick.css made available under Mozilla Public License v. 2.0
+ /* Source file https://github.com/MrOtherGuy/firefox-csshacks/tree/master/chrome/button_effect_scale_onclick.css made available under Mozilla Public License v. 2.0
 See the above repository for updates as well as full license text. */
 
 /* Effect *
@@ -2442,7 +2440,7 @@ html {
 
 /* urlbar height */
 #urlbar-container {
-  --urlbar-container-height: 28px !important;
+  --urlbar-container-height: 26px !important;
   padding: 0 !important;
 }
 
@@ -2594,7 +2592,7 @@ html {
   }
 
   #searchbar {
-    max-height: 28px !important;
+    max-height: 26px !important;
     border: none !important;
     box-shadow: none !important;
 
@@ -2726,7 +2724,7 @@ tab[class*="identity-color-"] .tab-context-line {
   box-shadow: 0 -2px 5px rgba(255, 0, 0, 0.9), 0 2px 5px rgba(255, 0, 0, 0.9) !important;
   background-color: transparent !important;
   /* keep it subtle *
-}*
+}*/
 :root {
   --tweaks-bati-indicator-width: 4px;
   --tweaks-bati-indicator-color: #7388d9;
@@ -2763,22 +2761,22 @@ tab[class*="identity-color-"] .tab-context-line {
   text-shadow:
     0 0 1px rgba(255, 255, 255, 1),
     0 0 5px rgba(255, 255, 255, 0.7),
-    0 0 10px rgba(100, 149, 255, 0.698),
-    0 0 20px rgba(100, 149, 255, 0.439),
+    0 0 10px rgba(100, 150, 255, 0.6),
+    0 0 20px rgba(100, 150, 255, 0.25),
     0 1px 2px rgba(0, 0, 0, 0.8) !important;
 }
 
 /* URL bar background darkened for contrast */
 #urlbar-background {
-  background-color: rgba(0, 0, 0, 0.653) !important;
+  background-color: rgba(0, 0, 0, 0.55) !important;
   border: 1px solid rgba(100, 150, 255, 0.15) !important;
 }
 
 /* Focused URL bar background */
 #urlbar[focused]>#urlbar-background {
-  background-color: rgba(0, 0, 0, 0.764) !important;
+  background-color: rgba(0, 0, 0, 0.65) !important;
   border: 1px solid rgba(100, 150, 255, 0.3) !important;
-  box-shadow: 0 0 8px rgba(100, 149, 255, 0.396) !important;
+  box-shadow: 0 0 8px rgba(100, 150, 255, 0.15) !important;
 }
 
 /* Placeholder text subtle */
@@ -2790,11 +2788,11 @@ tab[class*="identity-color-"] .tab-context-line {
 
 /* Selected URL text */
 #urlbar-input::selection {
-  background-color: rgba(187, 79, 223, 0.604) !important;
+  background-color: rgba(100, 150, 255, 0.35) !important;
   color: white !important;
 }
 
-/* Blend Inactive tabs favicon *
+/* Blend Inactive tabs favicon */
 :is(#TabsToolbar, #vertical-tabs) #tabbrowser-tabs .tabbrowser-tab[pending] .tab-content:not(:hover) .tab-icon-image {
   filter: grayscale(70%);
   transition: filter 0.2s ease-in;
@@ -2803,391 +2801,39 @@ tab[class*="identity-color-"] .tab-context-line {
 
 /* ===== GRADIENT BORDER ON TAB HOVER ===== */
 
-/* Remove default hover effects first *
+/* Remove default hover effects first */
 .tabbrowser-tab:not([selected]):hover .tab-background {
   background-color: transparent !important;
 }
 
-/* Create gradient border on hover for unselected tabs *
+/* Create gradient border on hover for unselected tabs */
 .tabbrowser-tab:not([selected]):hover .tab-background {
   position: relative !important;
   background: transparent !important;
-  border-radius: 8px !important;
+  border-radius: 8px 8px 0 0 !important;
 }
 
-/* Gradient border using pseudo-element *
+/* Gradient border using pseudo-element */
 .tabbrowser-tab:not([selected]):hover .tab-background::before {
   content: "" !important;
   position: absolute !important;
   inset: 0 !important;
-  border-radius: 8px !important;
-  /* Border thickness *
-  background: linear-gradient(90deg,
-      #9400ff,
-      #ba00e5,
-      #df06b9,
-      #e62da7,
-      #f13b95,
-      #f64d86,
-      #f85f7a,
-      #fc7169,
-      #f9845b,
-      #e8ab52) !important;
+  border-radius: 8px 8px 0 0 !important;
+  padding: 2px !important;
+  /* Border thickness */
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%) !important;
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0) !important;
   -webkit-mask-composite: xor !important;
   mask-composite: exclude !important;
   pointer-events: none !important;
 }
 
-/**! Smooth transition *
+/* Smooth transition */
 .tabbrowser-tab .tab-background {
   transition: all 0.2s ease-in-out !important;
 }
 
-/* Ensure normal state has no border *
+/* Ensure normal state has no border */
 .tabbrowser-tab:not([selected]):not(:hover) .tab-background::before {
   display: none !important;
-}*/
-
-/* Source file https://github.com/MrOtherGuy/firefox-csshacks/tree/master/chrome/autohide_sidebar.css made available under Mozilla Public License v. 2.0
-See the above repository for updates as well as full license text. */
-
-/* Show sidebar only when the cursor is over it.
-   The border controlling sidebar width will be removed so you'll need to modify
-   these values to change width. 
-   By default the internal layout of sidebar changes when hovered, but this can
-   be changed by setting pref "userchrome.autohide-sidebar.static-layout.enabled" to true
- */
-
-/* Note: If you want only *some* sidebar to be auto-hidden, then you can use [sidebarcommand] attribute selector.
-   For example, to only affect Sidebery's sidebar replace all instances of #sidebar-box with
-   #sidebar-box[sidebarcommand="_3c078156-979c-498b-8990-85f7987dd929_-sidebar-action"].
-   To find the sidebarcommand value for any other sidebar, open that sidebar and use Browser Toolbox to inspect it.
-   See: https://firefox-source-docs.mozilla.org/devtools-user/browser_toolbox/index.html
-*/
-:where(#main-window) #browser {
-  --uc-sidebar-width: 40px;
-  --uc-sidebar-hover-width: 210px;
-}
-
-#main-window[sizemode="fullscreen"] #browser {
-  --uc-sidebar-width: 1px !important;
-}
-
-#sidebar-box {
-  --uc-autohide-sidebar-delay: 600ms !important;
-  /* Wait 0.6s before hiding sidebar */
-  --uc-autohide-transition-duration: 115ms;
-  --uc-autohide-transition-type: linear;
-  --browser-area-z-index-sidebar: 3;
-  position: relative;
-  min-width: var(--uc-sidebar-width) !important;
-  width: var(--uc-sidebar-width) !important;
-  max-width: var(--uc-sidebar-width) !important;
-  z-index: var(--browser-area-z-index-sidebar, 3);
-  background-color: inherit !important;
-  /* This directionality flipper is played so that sidebar "grows" into the right direction */
-  direction: ltr !important;
-
-  &:is([positionend], [sidebar-positionend]):not(:-moz-locale-dir(rtl)) {
-    direction: rtl;
-  }
-}
-
-.sidebar-browser-stack {
-  background: inherit !important;
-}
-
-#main-window[sizemode="fullscreen"] #browser {
-  --uc-sidebar-width: 1px !important;
-}
-
-#sidebar-splitter {
-  display: none !important;
-}
-
-#sidebar-header {
-  overflow: hidden !important;
-  color: var(--chrome-color, inherit) !important;
-  padding-inline: 0 !important;
-}
-
-#sidebar-header::before,
-#sidebar-header::after {
-  content: "";
-  display: flex !important;
-  padding-left: 8px !important;
-}
-
-#sidebar-header,
-#sidebar {
-  transition: min-width var(--uc-autohide-transition-duration) var(--uc-autohide-transition-type) var(--uc-autohide-sidebar-delay) !important;
-  min-width: var(--uc-sidebar-width) !important;
-  will-change: min-width !important;
-  direction: ltr;
-
-  &:-moz-locale-dir(rtl) {
-    direction: rtl;
-  }
-}
-
-#sidebar-box:hover>#sidebar-header,
-#sidebar-box:hover>#sidebar,
-#sidebar-box:hover>.sidebar-browser-stack>#sidebar {
-  min-width: var(--uc-sidebar-hover-width) !important;
-  transition-delay: 0ms !important;
-}
-
-.sidebar-panel {
-  background-color: transparent !important;
-  color: var(--newtab-text-primary-cozlor) !important;
-}
-
-.sidebar-panel #search-box {
-  appearance: -moz-sidebar !important;
-  background-color: rgba(249, 249, 250, 0.1) !important;
-  color: inherit !important;
-}
-
-/* Add sidebar divider and give it background */
-
-#sidebar,
-#sidebar-header {
-  background-color: inherit !important;
-  border-inline: 1px solid rgb(80, 80, 80);
-  border-inline-width: 0px 1px;
-}
-
-#sidebar-box:not([positionend], [sidebar-positionend])> :-moz-locale-dir(rtl),
-#sidebar-box:is([positionend], [sidebar-positionend])>* {
-  border-inline-width: 1px 0px;
-}
-
-@media -moz-pref("sidebar.revamp") {
-  #sidebar, #sidebar-header {
-    border-style: none
-  }
-
-  #sidebar-box {
-    padding: 0 !important;
-  }
-}
-
-/* Move statuspanel to the other side when sidebar is hovered so it doesn't get covered by sidebar */
-
-#sidebar-box:not([positionend], [sidebar-positionend]):hover~#appcontent #statuspanel {
-  inset-inline: auto 0px !important;
-}
-
-#sidebar-box:not([positionend], [sidebar-positionend]):hover~#appcontent #statuspanel-label {
-  margin-inline: 0px !important;
-  border-left-style: solid !important;
-}
-
-#sidebar-box {
-  min-width: var(--uc-sidebar-width) !important;
-  contain: size;
-  box-shadow: var(--content-area-shadow);
-}
-
-#sidebar {
-  min-width: var(--uc-sidebar-hover-width) !important;
-}
-
-.sidebar-browser-stack {
-  overflow: hidden;
-  width: 100%;
-  transition: width var(--uc-autohide-transition-duration) var(--uc-autohide-transition-type) var(--uc-autohide-sidebar-delay);
-  direction: ltr;
-
-  &:hover {
-    transition-delay: 0ms;
-    width: var(--uc-sidebar-hover-width);
-  }
-
-  &:-moz-locale-dir(rtl) {
-    transition-property: transform, width !important;
-  }
-}
-
-#sidebar-box[sidebar-positionend]:hover :is(#sidebar-header, #sidebar):-moz-locale-dir(ltr) {
-  transform: translateX(0);
-  transition-delay: 0ms !important;
-}
-
-#sidebar-box:not([sidebar-positionend]):hover .sidebar-browser-stack:-moz-locale-dir(rtl) {
-  transform: translateX(calc(-1 * var(--uc-sidebar-hover-width) + var(--uc-sidebar-width)));
-}
-
-#sidebar-box[sidebar-positionend]:hover>.sidebar-browser-stack:-moz-locale-dir(rtl) {
-  transform: translateX(calc(var(--uc-sidebar-hover-width) - var(--uc-sidebar-width)));
-  transition-delay: 0ms !important;
-}
-
-#sidebar-main[sidebar-panel-open] {
-  contain: strict;
-}
-
-/* autohide forward button *
-#forward-button {
-  transform: scale(1, 1) !important;
-  transition: margin-left 150ms var(--animation-easing-function), opacity 250ms var(--animation-easing-function), transform 350ms var(--animation-easing-function) !important;
-}
-
-#forward-button[disabled="true"] {
-  margin-left: -28px !important;
-  opacity: 0 !important;
-  transform: scale(0.8, 0.8) !important;
-  pointer-events: none !important;
-}
-
-/* remove this if you don't want the forward button to be slightly smaller than the back button, a la australis *
-#forward-button .toolbarbutton-icon {
-  padding: calc(var(--toolbarbutton-inner-padding) + 1px) !important;
-}
-
-/* Rainbow line in the main menus */
-
-.PanelUI-subView>toolbarseparator {
-  border-image: linear-gradient(90deg,
-      #9400ff,
-      #ba00e5,
-      #df06b9,
-      #e62da7,
-      #f13b95,
-      #f64d86,
-      #f85f7a,
-      #fc7169,
-      #f9845b,
-      #e8ab52) 1 !important;
-}
-
-/* Gradient border for unselected tabs on hover */
-.tabbrowser-tab:not([selected]):hover .tab-background {
-  border: 1px solid transparent !important;
-  background:
-    linear-gradient(white, white) padding-box,
-    linear-gradient(90deg,
-      #9400ff,
-      #ba00e5,
-      #df06b9,
-      #e62da7,
-      #f13b95,
-      #f64d86,
-      #f85f7a,
-      #fc7169,
-      #f9845b,
-      #e8ab52) border-box !important;
-  border-radius: 8px !important;
-}
-
-/* tabs when the mouse pointer is hovering on them */
-#TabsToolbar .tabbrowser-tab:hover:not([selected]) {
-  border-radius: 8px !important;
-  outline: 1px solid transparent !important;
-  /*background-color: #662b99 !important;
-  /*background: linear-gradient(#e66465, #9198e5) !important;*/
-  /*background: linear-gradient(#9198e5, #ba8fe5) !important;*/
-  background: linear-gradient(90deg,
-      #9400ff,
-      #ba00e5,
-      #df06b9,
-      #e62da7,
-      #f13b95,
-      #f64d86,
-      #f85f7a,
-      #fc7169,
-      #f9845b,
-      #e8ab52) !important;
-  /* background-color: rgb(50, 50, 50) !important;
-  /* text color */
-  /*color: rgb(0,0,0) !important;*/
-  /*color: white !important;*/
-}
-
-.tabbrowser-tab {
-  background-image: linear-gradient(rgba(0, 0, 0, .2) 1px, transparent 1px, transparent 99%) !important;
-}
-
-/* Gradient border for unselected tabs on hover */
-.tabbrowser-tab:not([selected]):hover .tab-background {
-  border: 1px solid transparent !important;
-  background:
-    linear-gradient(white, white) padding-box,
-    linear-gradient(90deg,
-      #9400ff,
-      #ba00e5,
-      #df06b9,
-      #e62da7,
-      #f13b95,
-      #f64d86,
-      #f85f7a,
-      #fc7169,
-      #f9845b,
-      #e8ab52) border-box !important;
-  border-radius: 8px !important;
-}
-
-/* Gradient outline effect *
-.tabbrowser-tab:not([selected]):hover .tab-background {
-  position: relative !important;
-  border-radius: 8px !important;
-}
-
-.tabbrowser-tab:not([selected]):hover .tab-background::before {
-  content: "" !important;
-  position: absolute !important;
-  inset: -1px !important;
-  border-radius: 8px !important;
-  padding: 1px !important;
-  background: linear-gradient(90deg,
-      #9400ff,
-      #ba00e5,
-      #df06b9,
-      #e62da7,
-      #f13b95,
-      #f64d86,
-      #f85f7a,
-      #fc7169,
-      #f9845b,
-      #e8ab52) !important;
-  -webkit-mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0) !important;
-  mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0) !important;
-  -webkit-mask-composite: xor !important;
-  mask-composite: exclude !important;
-}
-
-/* Animated gradient border on hover *
-.tabbrowser-tab:not([selected]):hover .tab-background {
-  border: 2px solid transparent !important;
-  background:
-    var(--tab-bgcolor) padding-box,
-    linear-gradient(90deg,
-      #9400ff,
-      #ba00e5,
-      #df06b9,
-      #e62da7,
-      #f13b95,
-      #f64d86,
-      #f85f7a,
-      #fc7169,
-      #f9845b,
-      #e8ab52) border-box !important;
-  background-size: 300% 100% !important;
-  animation: gradient-shift 3s ease infinite !important;
-  border-radius: 8px !important;
-}
-
-@keyframes gradient-shift {
-  0%, 100% {
-    background-position: 0% 50%;
-  }
-
-  50% {
-    background-position: 100% 50%;
-  }
 }
