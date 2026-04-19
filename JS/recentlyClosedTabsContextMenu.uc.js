@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name           Undo Recently Closed Tabs in Tab Context Menu
-// @version        2.1.7
+// @version        2.1.8
 // @author         aminomancer
 // @homepageURL    https://github.com/aminomancer/uc.css.js
 // @long-description
@@ -564,7 +564,7 @@ class UndoListInTabmenu {
 
       if (aIsWindowsFragment) {
         element.addEventListener("command", event =>
-          event.target.ownerGlobal.undoCloseWindow(aIndex)
+          lazy.SessionWindowUI.undoCloseWindow(aIndex)
         );
       } else if (typeof aClosedTab.sourceClosedId == "number") {
         // sourceClosedId is used to look up the closed window to remove it when the tab is restored
@@ -983,7 +983,7 @@ class RecentlyClosedPanelContext {
         this.onRestoreTab(e, button);
         break;
       case "window":
-        undoCloseWindow(button.getAttribute("value"));
+        window.SessionWindowUI.undoCloseWindow(button.getAttribute("value"));
         break;
     }
     button.remove();

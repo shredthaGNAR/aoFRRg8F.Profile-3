@@ -4,11 +4,11 @@
  * file, You can obtain one at http://creativecommons.org/licenses/by-nc-sa/4.0/
  * or send a letter to Creative Commons, PO Box 1866, Mountain View, CA 94042, USA. */
 
-/* controls the appearance of individual tabs and elements inside a tab. */
+/* controls the appearance of individual tabs and elements inside a tab. *
 
 #TabsToolbar .tabbrowser-tab {
   background-color: var(--lwt-accent-color) !important;
-}
+}*/
 
 .tab-content {
   overflow: hidden !important;
@@ -36,15 +36,15 @@
 }
 
 #tabbrowser-tabs:focus-within .tabbrowser-tab.tablist-keyboard-focus {
-  &:not([selected]) > .tab-stack > .tab-background {
+  &:not([selected])>.tab-stack>.tab-background {
     background: var(--uc-tab-hover) !important;
   }
 
-  &[selected] > .tab-stack > .tab-background {
+  &[selected]>.tab-stack>.tab-background {
     background: var(--uc-tab-focused-hover) !important;
   }
 
-  &[multiselected]:not([selected]) > .tab-stack > .tab-background {
+  &[multiselected]:not([selected])>.tab-stack>.tab-background {
     background: var(--uc-tab-multi-hover) !important;
   }
 }
@@ -54,7 +54,6 @@
   transform: none !important;
 }
 
-/*
 .tab-background {
   border: none !important;
   outline: none !important;
@@ -62,9 +61,9 @@
 }
 
 /* different tab shadows in various states. to produce the illusion of modulated depth */
-/* .tabbrowser-tab .tab-background {
+.tabbrowser-tab .tab-background {
   box-shadow: 0px 0px 15px 0px hsla(0, 0%, 0%, 0.2), 0px 0px 5px 0px hsla(0, 0%, 0%, 0.1);
-} */
+}
 
 .tabbrowser-tab:not([selected], [multiselected]):is(:hover, [open]) .tab-background,
 .tabbrowser-tab[multiselected] .tab-background,
@@ -76,7 +75,6 @@
 .tabbrowser-tab[multiselected][selected] .tab-background {
   box-shadow: 0 0 20px 1px rgba(0, 0, 0, 0.1), 0 0 15px 0 hsla(0, 0%, 0%, 0.35) !important;
 }
-
 
 .tabbrowser-tab .tab-context-line {
   display: flex !important;
@@ -95,13 +93,12 @@
 /* purple line on multiselected tabs *
 .tabbrowser-tab[multiselected] .tab-context-line {
   background-color: var(--multiselected-color) !important;
-}
-*/
+}*/
+
 .tabbrowser-tab:not([usercontextid], [multiselected]) .tab-context-line {
   display: none !important;
 }
 
-/*
 .tabbrowser-tab.identity-icon-on-multiselect[usercontextid][multiselected] .tab-content::after {
   content: "";
   display: flex;
@@ -362,7 +359,7 @@ hover the general area of the tabs, but will show if audio is muted. */
 /* tab buttons are animated with opacity and transformation */
 #tabbrowser-tabs:not(:focus-within) .tabbrowser-tab:not(:hover, [tabdrop-samewindow], [open]) .tab-close-button,
 #tabbrowser-tabs:focus-within .tabbrowser-tab:not(.tablist-keyboard-focus) .tab-close-button {
-  transform: scale(0.5) !important;
+  transform: translateX(-15px) scale(0.5) !important;
 }
 
 #tabbrowser-tabs:not([movingtab]) .tabbrowser-tab:not([tabdrop-samewindow]) :is(.tab-close-button, .tab-icon-image, .tab-sharing-icon-overlay, .tab-throbber) {
@@ -372,6 +369,7 @@ hover the general area of the tabs, but will show if audio is muted. */
 .tab-icon-pending[pendingicon] {
   pointer-events: none !important;
   display: block !important;
+  margin-right: -16px !important;
 }
 
 .tab-icon-image {
@@ -383,7 +381,7 @@ hover the general area of the tabs, but will show if audio is muted. */
 #tabbrowser-tabs:focus-within .tabbrowser-tab.tablist-keyboard-focus :is(.tab-icon-image, .tab-sharing-icon-overlay) {
   opacity: 0 !important;
   pointer-events: none !important;
-  transform: scale(0.5) !important;
+  transform: translateX(25px) scale(0) !important;
 }
 
 .tabbrowser-tab .tab-label:not([fadein]),
@@ -394,14 +392,14 @@ hover the general area of the tabs, but will show if audio is muted. */
 .tabbrowser-tab .tab-throbber:not([busy]) {
   opacity: 0 !important;
   pointer-events: none !important;
-  transform: scale(0.5) !important;
+  transform: translateX(-15px) scale(0.5) !important;
 }
 
 .tabbrowser-tab:is(:hover, [tabdrop-samewindow], [open]) .tab-throbber,
 #tabbrowser-tabs:focus-within .tabbrowser-tab.tablist-keyboard-focus .tab-throbber {
   opacity: 0 !important;
   pointer-events: none !important;
-  transform: scale(0.5) !important;
+  transform: translateX(25px) scale(0.5) !important;
 }
 
 .tab-throbber[busy] {
@@ -524,7 +522,7 @@ thing with the all-tabs-menu loading icons in the next ruleset below. */
 
   /* ANIMATION METHOD #4: this version of the animation is implemented in CSS on
      a sprite sheet. it's like method #3 except it eliminates an issue with the
-     vector illustration that makes the icon look like it wobbles. *
+     vector illustration that makes the icon look like it wobbles. 
     background-image: url(chrome://userchrome/content/loading-spinner-sprite.svg) !important;
     background-position: left center !important;
     width: 192px !important;
@@ -541,15 +539,14 @@ thing with the all-tabs-menu loading icons in the next ruleset below. */
   :root[uc-loading-spinner] .tab-throbber-tabslist:is([busy], [progress]) {
     /* ANIMATION METHOD #1: */
     list-style-image: url(chrome://userchrome/content/loading-spinner.svg) !important;
+
+    /* ANIMATION METHOD #2: */
+    /* list-style-image: url(chrome://userchrome/content/loading-spinner-css.svg) !important; */
+
+    /* ANIMATION METHOD #3: */
+    /* animation: 0.85s steps(12, end) uc-tab-throbber-spinner-css infinite !important;
+  list-style-image: url(chrome://userchrome/content/loading-spinner-static.svg) !important; */
   }
-
-  /* ANIMATION METHOD #2: */
-  /* list-style-image: url(chrome://userchrome/content/loading-spinner-css.svg) !important; */
-
-  /* ANIMATION METHOD #3: *
-    animation: 0.85s steps(12, end) uc-tab-throbber-spinner-css infinite !important;
-  list-style-image: url(chrome://userchrome/content/loading-spinner-static.svg) !important;
-
 
   :root[uc-loading-spinner] .tab-throbber-tabslist[busy] {
     opacity: 0.8 !important;
@@ -560,30 +557,32 @@ thing with the all-tabs-menu loading icons in the next ruleset below. */
     opacity: 1 !important;
     fill: var(--loading-throbber-fill) !important;
   }
-
+}
 
 /* hide the close button for pinned tabs. if the last visible tab is pinned, it
 doesn't hide the close button since the tab doesn't get shrunk in that case.
 this requires you to make a pref in about:config and set it to true:
 "userChrome.tabs.pinned-tabs.close-buttons.disabled" */
-  /* stylelint-disable-next-line media-query-no-invalid */
-  .tabbrowser-tab[pinned] .tab-close-button {
-    display: none !important;
-  }
+/* stylelint-disable-next-line media-query-no-invalid */
 
-  .tabbrowser-tab[pinned] .tab-throbber[busy],
-  .tabbrowser-tab[pinned]:not([busy]) :is(.tab-icon-image, .tab-sharing-icon-overlay) {
-    opacity: 1 !important;
-    transform: none !important;
-  }
+.tabbrowser-tab[pinned] .tab-close-button {
+  display: none !important;
+}
 
-  /* for some reason the gradient on overflowing labels is variable in proton. it
+.tabbrowser-tab[pinned] .tab-throbber[busy],
+.tabbrowser-tab[pinned]:not([busy]) :is(.tab-icon-image, .tab-sharing-icon-overlay) {
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+
+/* for some reason the gradient on overflowing labels is variable in proton. it
 gets bigger when you hover the tab, apparently because the close button gains a
 background in that condition. this is ugly in general imo but it's useless with
 this theme in particular since we put the close button on the right, meaning it
 doesn't overlap with the right side of the label at all, which is where the
 overflowing mask is applied. so we make the mask size constant. */
-  .tabbrowser-tab {
-    --tab-label-mask-size: 1em !important;
-    --tab-min-width: inherit !important;
-  }}
+.tabbrowser-tab {
+  --tab-label-mask-size: 2em !important;
+  --tab-min-width: inherit !important;
+}

@@ -3,12 +3,12 @@ See the above repository for updates as well as full license text. */
 
 /* Draws a border around urlbar using the color of the current container. */
 
-#urlbar:not([open]) > #urlbar-input-container{
+.urlbar-input-container {
   border-width: 0 !important;
   padding: 2px !important;
 }
 
-#userContext-icons::before{
+#userContext-icons::before {
   box-sizing: border-box;
   display: block;
   position: absolute;
@@ -23,19 +23,27 @@ See the above repository for updates as well as full license text. */
   pointer-events: none;
 }
 
-#urlbar[focused] #userContext-icons::before{
+#urlbar[focused] #userContext-icons::before {
   outline-width: 2px;
   outline-offset: -2px
 }
 
-/* These might potentially cause some issues, but are needed to make the border extend the border to the full popup when urlabar popup is open */
-#urlbar[open] > #urlbar-input-container{ position: static !important; }
-#urlbar[open] > #urlbar-background{ z-index: -1 !important; }
+/* These might potentially cause some issues, but are needed to make the border extend the border to the full popup when urlbar popup is open */
+#urlbar[open]>.urlbar-input-container {
+  position: static !important;
+  padding: calc(2px + var(--urlbar-margin-inline, 5px)) !important;
+}
+
+#urlbar[open]> :is(#urlbar-background, .urlbar-background) {
+  z-index: -1 !important;
+}
 
 /* OPTIONAL FEATURES */
 
 /* Hide container label in urlbar */
-/* #userContext-label{ display: none } */
+#userContext-label {
+  display: none
+}
 
 /* Hide container icon in urlbar */
 /* #userContext-indicator{ display: none } */

@@ -1,17 +1,21 @@
 // ==UserScript==
-// @name           Backspace Panel Navigation
-// @version        1.1.4
-// @author         aminomancer
-// @homepageURL    https://github.com/aminomancer
-// @description    Press backspace to navigate back/forward in popup panels.
-// @downloadURL    https://cdn.jsdelivr.net/gh/aminomancer/uc.css.js@master/JS/backspacePanelNav.uc.js
-// @updateURL      https://cdn.jsdelivr.net/gh/aminomancer/uc.css.js@master/JS/backspacePanelNav.uc.js
-// @license        This Source Code Form is subject to the terms of the Creative Commons Attribution-NonCommercial-ShareAlike International License, v. 4.0. If a copy of the CC BY-NC-SA 4.0 was not distributed with this file, You can obtain one at http://creativecommons.org/licenses/by-nc-sa/4.0/ or send a letter to Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
+// @name            Backspace Panel Navigation
+// @version         1.1.6
+// @author          aminomancer
+// @homepageURL     https://github.com/aminomancer
+// @description     Press backspace to navigate back/forward in popup panels.
+// @license         Creative Commons Attribution-NonCommercial-ShareAlike 4.0
 // ==/UserScript==
 
 (function () {
   function init() {
+    // Locate the prototype for PanelView to patch key behavior globally
     const pc = Object.getPrototypeOf(PanelView.forNode(PanelUI.mainView));
+    
+    /**
+     * Enhanced check for modern Firefox UI elements.
+     * Prevents Backspace navigation when focus is inside a text-entry field.
+     */
     function isNavigableWithTabOnly(element) {
       let tag = element.localName;
       return (
@@ -20,27 +24,21 @@
         tag == "radiogroup" ||
         tag == "input" ||
         tag == "textarea" ||
-        // Allow tab to reach embedded documents.
+        tag == "search-textbox" || // Firefox's custom search inputs
+        tag == "moz-input-box" ||  // Common wrapper for various UI inputs
         tag == "browser" ||
         tag == "iframe" ||
-        // This is currently needed for the unified extensions panel to allow
-        // users to use up/down arrow to more quickly move between the extension
-        // items. See Bug 1784118
+        element.isContentEditable || // Handles rich-text editors
         element.dataset?.navigableWithTabOnly === "true"
       );
     }
-    eval(
-      `pc.keyNavigation = function ${pc.keyNavigation
-        .toSource()
-        .replace(/^\(/, "")
-        .replace(/\)$/, "")
-        .replace(/^keyNavigation\s*/, "")
-        .replace(/^function\s*/, "")
-        .replace(/#isNavigableWithTabOnly/, isNavigableWithTabOnly)
-        .replace(
-          /(case \"ArrowLeft\"\:)/,
-          `case "Backspace":
-        if (tabOnly() || isContextMenuOpen()) {
+
+    // Capture the original function as a string for modification
+    let navString = pc.keyNavigation.toString();
+    
+    // The logic to inject: navigate back if possible, otherwise close the popup
+    const backspaceLogic = `case "Backspace":
+        if (tabOnly() || (typeof isContextMenuOpen === "function" && isContextMenuOpen())) {
           break;
         }
         stop();
@@ -50,11 +48,20 @@
           PanelMultiView.forNode(this.node.panelMultiView)?._panel.hidePopup(true);
         }
         break;
-        $1`
-        )}`
-    );
+        `;
+
+    try {
+      eval(
+        `pc.keyNavigation = ${navString
+          .replace(/#isNavigableWithTabOnly/g, isNavigableWithTabOnly.toString())
+          .replace(/(case\s+["']ArrowLeft["']\s*:)/, backspaceLogic + "$1")}`
+      );
+    } catch (e) {
+      console.error("BackspacePanelNav: Failed to patch keyNavigation", e);
+    }
   }
 
+  // Ensure the UI is ready before attempting to patch
   if (gBrowserInit.delayedStartupFinished) {
     init();
   } else {
@@ -64,9 +71,6 @@
         init();
       }
     };
-    Services.obs.addObserver(
-      delayedListener,
-      "browser-delayed-startup-finished"
-    );
+    Services.obs.addObserver(delayedListener, "browser-delayed-startup-finished");
   }
 })();
