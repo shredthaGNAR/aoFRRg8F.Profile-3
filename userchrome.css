@@ -1026,7 +1026,7 @@ See the above repository for updates as well as full license text. */
 
  .tab-background[selected] {
      background-image: radial-gradient(circle at center,
-             #6c3ac3 5px,
+             #6c3ac3 15px,
              #110421b8) !important;
  }
 
@@ -1251,7 +1251,7 @@ See the above repository for updates as well as full license text. */
  /* 1/16/2022 Tone down the Fx96 tab border with add-on themes in certain fallback situations */
  .tab-background:is([selected], [multiselected]):-moz-lwtheme {
      background-image: radial-gradient(circle at center,
-             #6600ff 15px,
+             #0fe625 15px,
              #8433d0df) !important;
  }
 
@@ -2935,7 +2935,7 @@ See the above repository for updates as well as full license text. */
 
  /* Change width of the gradient mask located on the right of the tab labels. */
  #tabbrowser-tabs[closebuttons="activetab"] .tabbrowser-tab .tab-label-container {
-     --tab-label-mask-size: 2em !important;
+     --tab-label-mask-size: 1em !important;
  }
 
  /* String for the custom label. */
@@ -3033,7 +3033,7 @@ See the above repository for updates as well as full license text. */
      height: unset !important;
  }
 
- /* Fx 100+ outline fix *
+ /* Fx 100+ outline fix */
  :root[lwtheme] :is(#TabsToolbar, #vertical-tabs) #firefox-view-button[open]>.toolbarbutton-icon,
  :root[lwtheme] .tab-background[selected] {
      outline: unset !important;
@@ -3149,7 +3149,7 @@ this theme in particular since we put the close button on the right, meaning it
 doesn't overlap with the right side of the label at all, which is where the
 overflowing mask is applied. so we make the mask size constant. */
  .tabbrowser-tab {
-     --tab-label-mask-size: 2em !important;
+     --tab-label-mask-size: 1em !important;
      --tab-min-width: inherit !important;
  }
 
@@ -3258,5 +3258,265 @@ overflowing tabs don't draw shadows on the special new tab button */
  }
 
  #TabsToolbar .tabbrowser-tab[selected] {
+     font-weight: bolder !important;
+ }
+
+ /* Small changes to make proton roughly as compact as the old compact mode */
+
+ :root {
+     --toolbarbutton-inner-padding: 6px !important;
+     --toolbarbutton-padding-inner: 6px !important;
+     --tab-block-margin: 2px !important;
+     --tabs-shadow-size: 0px !important;
+     --arrowpanel-menuitem-padding-block: 5px !important;
+     --panel-font-size: inherit !important;
+     --arrowpanel-padding: 0.8em !important;
+     --inline-tab-padding: 8px !important;
+     /* 8px is default value since it looks good - lower values compactify tabs horizontally */
+     --tab-inline-padding: 8px !important;
+     /* Same as above, but for fx132 */
+ }
+
+ .subviewbutton.bookmark-item {
+     padding-block: 4px !important;
+ }
+
+ .subview-subheader {
+     display: block
+ }
+
+ menupopup>menuitem,
+ menupopup>menu {
+     padding-block: 0.3em !important;
+ }
+
+ /* This is kinda weird, but it makes the horizontal line between tabs and nav-bar render "inside" nav-bar thus tabs are more visibily separated even if there is less space there */
+ #nav-bar {
+     box-shadow: inset 0 var(--tabs-shadow-size) 0 var(--lwt-tabs-border-color) !important;
+ }
+
+ :host,
+ :root {
+     --urlbar-container-min-width: 150px !important;
+ }
+
+ :root {
+     /* On macOS, top level windows are always opaque. This gives us the right
+   * default background color, without confusing Gecko about whether the window
+   * is transparent or not. */
+     -moz-default-appearance: -moz-mac-window !important;
+     appearance: auto !important;
+ }
+
+ /* Gradient text on all tab labels */
+ .tabbrowser-tab .tab-label {
+     /* Make text transparent so gradient shows through */
+     color: transparent !important;
+
+     /* Gradient background */
+     background-image: linear-gradient(90deg, #ff6a00, #ee0979) !important;
+     background-clip: text;
+     -webkit-background-clip: text;
+     /* for compatibility */
+
+     /* Ensure background is only where text is */
+     background-repeat: no-repeat;
+ }
+
+ /* Optional: only apply when tab is selected */
+ .tabbrowser-tab[selected="true"] .tab-label {
+     color: transparent !important;
+     background-image: linear-gradient(90deg, #00c6ff, #0072ff) !important;
+     background-clip: text;
+     -webkit-background-clip: text;
+ }
+
+ /* ========== Gradient text on tab labels ========== */
+
+ /* All tabs: base style */
+ .tabbrowser-tab .tab-label {
+     color: transparent !important;
+     /* hide normal color */
+
+     background-image: linear-gradient(90deg, #ff6a00, #ee0979);
+     background-clip: text;
+     -webkit-background-clip: text;
+     /* for compatibility */
+
+     background-repeat: no-repeat;
+     background-size: 100% 100%;
+ }
+
+ /* Optional: different gradient for the active (selected) tab */
+ .tabbrowser-tab[selected="true"] .tab-label {
+     color: transparent !important;
+
+     background-image: linear-gradient(90deg, #00c6ff, #0072ff);
+     background-clip: text;
+     -webkit-background-clip: text;
+
+     background-repeat: no-repeat;
+     background-size: 100% 100%;
+ }
+
+ /* Make sure the label is fully visible and not dimmed */
+ .tabbrowser-tab .tab-label-container {
+     opacity: 1 !important;
+ }
+
+ /* Change "Private Browsing" text to "Private" (English locale only). */
+ :root:is([lang^="en"]) #private-browsing-indicator-with-label>label {
+     display: none !important;
+ }
+
+ :root:is([lang^="en"]) #private-browsing-indicator-with-label::after {
+     content: var(--uc-string-private) !important;
+     margin-block: 1px 2px !important;
+     margin-inline: 6px 5px !important;
+ }
+
+ :root {
+     --tweaks-bati-indicator-width: 4px;
+     --tweaks-bati-indicator-color: #7388d9;
+ }
+
+ #sidebar-main .tab-background[selected]::before {
+     content: "";
+     position: absolute;
+     top: 0;
+     bottom: 0;
+     left: 0;
+     width: calc(2 * var(--tweaks-bati-indicator-width));
+     background: linear-gradient(90deg, var(--tweaks-bati-indicator-color) 50%, transparent 50%);
+     margin-block: var(--tab-block-margin);
+     border-radius: var(--border-radius-medium) 0 0 var(--border-radius-medium);
+ }
+
+ #sidebar-box {
+     --uc-autohide-sidebar-delay: 600ms !important;
+     --uc-autohide-transition-duration: 115ms;
+     --uc-autohide-transition-type: linear;
+     --browser-area-z-index-sidebar: 3;
+     position: relative;
+     min-width: var(--uc-sidebar-width) !important;
+     width: var(--uc-sidebar-width) !important;
+     max-width: var(--uc-sidebar-width) !important;
+     z-index: var(--browser-area-z-index-sidebar, 3);
+     background-color: inherit !important;
+     direction: ltr !important;
+ }
+
+ #sidebar-box:is([positionend], [sidebar-positionend]):not(:-moz-locale-dir(rtl)) {
+     direction: rtl;
+ }
+
+ #sidebar-header,
+ #sidebar {
+     transition: min-width var(--uc-autohide-transition-duration) var(--uc-autohide-transition-type) var(--uc-autohide-sidebar-delay) !important;
+     min-width: var(--uc-sidebar-width) !important;
+     will-change: min-width !important;
+     direction: ltr;
+ }
+
+ #sidebar-header:-moz-locale-dir(rtl),
+ #sidebar:-moz-locale-dir(rtl) {
+     direction: rtl;
+ }
+
+ .sidebar-browser-stack {
+     overflow: hidden;
+     width: 100%;
+     transition: width var(--uc-autohide-transition-duration) var(--uc-autohide-transition-type) var(--uc-autohide-sidebar-delay);
+     direction: ltr;
+ }
+
+ .sidebar-browser-stack:hover {
+     transition-delay: 0ms;
+     width: var(--uc-sidebar-hover-width);
+ }
+
+ .sidebar-browser-stack:-moz-locale-dir(rtl) {
+     transition-property: transform, width !important;
+ }
+
+ /* Why 100vw? Tab closing requires width animation to end and "none" can't be animated */
+ .tabbrowser-tab[fadein]:not([style^="max-width"]) {
+     max-width: 100vw !important;
+ }
+
+ tooltip {
+     -moz-appearance: none !important;
+     appearance: none !important;
+ }
+
+ :root:-moz-lwtheme {
+     --lwt-toolbarbutton-icon-fill-attention: rgba(235, 168, 104, 0.853) !important;
+ }
+
+ .tabbrowser-tab[unread="true"] .tab-label {
+     color: #ac5ffe !important;
+     /* or whatever you like */
      font-weight: bold !important;
+ }
+
+ .tabbrowser-tab:not([selected]):hover .tab-background::before {
+     content: "" !important;
+     position: absolute !important;
+     inset: 0 !important;
+     border-radius: 8px 8px 0 0 !important;
+     padding: 2px !important;
+     background: linear-gradient(90deg,
+             #ff0000, #ff7f00, #ffff00, #00ff00,
+             #0000ff, #4b0082, #9400d3, #ff0000) !important;
+     background-size: 200% 100% !important;
+     animation: gradient-shift 3s linear infinite !important;
+     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0) !important;
+     -webkit-mask-composite: xor !important;
+     mask-composite: exclude !important;
+ }
+
+ @keyframes gradient-shift {
+     0% {
+         background-position: 0% 50%;
+     }
+
+     100% {
+         background-position: 200% 50%;
+     }
+ }
+
+ /*
+ * Gradient border on tab hover — Firefox userChrome.css
+ * Tested approach: pseudo-element mask technique
+ * Compatible with: light/dark themes, compact mode, multi-select
+ */
+
+ /* Ensure tab-background can contain the absolutely-positioned pseudo-element */
+ #main-window .tabbrowser-tab:not([selected]):not([multiselected]):hover .tab-background {
+     position: relative !important;
+     overflow: visible !important;
+     /* allow ::before to bleed outside bounds */
+ }
+
+ /* The gradient border ring */
+ #main-window .tabbrowser-tab:not([selected]):not([multiselected]):hover .tab-background::before {
+     content: "" !important;
+     position: absolute !important;
+     inset: -1px;
+     /* 1px border thickness — increase for thicker border */
+     border-radius: calc(var(--tab-border-radius, 8px) + 1px);
+     padding: 1px;
+     background: linear-gradient(90deg,
+             #9400ff, #ba00e5, #df06b9,
+             #e62da7, #f13b95, #f64d86,
+             #f85f7a, #fc7169, #f9845b,
+             #e8ab52) !important;
+     /* Punch a hole through the center — only the border ring remains */
+     -webkit-mask:
+         linear-gradient(#fff 0 0) content-box,
+         linear-gradient(#fff 0 0);
+     -webkit-mask-composite: destination-out;
+     mask-composite: exclude;
+     pointer-events: none;
+     z-index: 1;
  }

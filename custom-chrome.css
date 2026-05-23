@@ -178,7 +178,7 @@ tooltip {
   background-image:
     /*var(--button-hover-bgcolor)*/
     radial-gradient(circle at bottom center,
-      #530ad0 12px,
+      #530ad0 2px,
       #110421b8) !important;
   /*box-shadow: 0 10px 10px -5px rgba(0, 0, 0, 0.2) !important;
   box-shadow: 5px 3px 6px rgb(1 1 1 / 16%), 4px 4px 2px rgb(0 0 0 / 23%) !important;*/
@@ -504,11 +504,11 @@ toolbar .toolbarbutton-1:not([disabled="true"]):is([open], [checked], :hover:act
 }
 
 /*** TAB TEXT & BACKBOARD STYLING UNREAD, UNLOADED, VISTITED */
-/* Loaded but unread (not selected) *
+/* Loaded but unread (not selected) */
 .tabbrowser-tab:not([selected="true"])[unread] .tab-label {
   color: rgb(133, 133, 133) !important;
   font-style: italic !important;
-  font-weight: thin !important;
+  /*font-weight: thin !important;*/
 }
 
 /*
@@ -616,7 +616,7 @@ toolbar .toolbarbutton-1:not([disabled="true"]):is([open], [checked], :hover:act
 /* 1/16/2022 Tone down the Fx96 tab border with add-on themes in certain fallback situations */
 .tab-background:is([selected], [multiselected]):-moz-lwtheme {
   /*  --lwt-tabs-border-color: rgba(51, 2, 82, 0.8) !important;*/
-  background-image: radial-gradient(circle at center,
+  background-image: radial-gradient(circle at bottom center,
       #6600ff,
       #0e001b85) !important;
 }
@@ -820,7 +820,7 @@ Works with Firefox 90 */
 :root .tab-background:not([selected]) {
   background-color: #d5d0d9;
   border: 1px solid white !important;
-}
+}*/
 :root .tab-background:not([selected]) {
   background-image: radial-gradient(circle at bottom center,
       #b98ff3,
@@ -859,7 +859,7 @@ Works with Firefox 90 */
 }
 
 #urlbar {
-  background-image: linear-gradient(0deg, #9400FF, #ba00e5, #df06b9, #e62da7, #f13b95, #f64d86, #f85f7a, #fc7169, #f9845b, #e8ab52) !important;
+  background-image: linear-gradient(90deg, #9400FF, #ba00e5, #df06b9, #e62da7, #f13b95, #f64d86, #f85f7a, #fc7169, #f9845b, #e8ab52) !important;
 }
 
 #urlbar-background {
@@ -887,7 +887,7 @@ Works with Firefox 90 */
 }
 
 /* Need to use FILTER dro shadow fo ouline so it is a circle */
-/*rework en la Linea de Contenedores-BordeFavicon*/
+/*rework en la Linea de Contenedores-BordeFavicon*
 .tab-icon-pending:not([selected], [pinned]),
 .tab-icon-pending:not([pinned]),
 .tab-sharing-icon-overlay:not([selected], [pinned]),
@@ -1083,25 +1083,25 @@ hbox .tab-icon-pending {
 :root {
   /*--lwt-selected-tab-background-color: var(--toolbar-bgcolor) !important;*/
 
-  --Loaded-and-selected-text: #ffffffe8;
+  --Loaded-and-selected-text: #fffffff2;
   --Loaded-and-selected-italic: normal;
   --Loaded-and-selected-bold: bold;
 
-  --Loaded-but-unread-text: #f9855bc7;
+  --Loaded-but-unread-text: #e3c176f5;
   --Loaded-but-unread-italic: italic;
   --Loaded-but-unread-bold: normal;
 
-  --Not-loaded-text: #bcbcc286;
+  --Not-loaded-text: #bcbcc2ee;
   --Not-loaded-italic: italic;
   --Not-loaded-bold: normal;
 
-  --Loading-text: #8a8686a0;
+  --Loading-text: #8a8686ed;
   --Loading-italic: italic;
   --Loading-bold: normal;
 }
 
 /* GLOW EFFECT ON TAB ICON */
-toolbarbutton.bookmark-item:not([container=true]) .toolbarbutton-icon,
+toolbarbutton.bookmark-item:not([container=true]) .toolbarbutton-icon
 
 /*for icons on the bookmarks bar under the url bar */
 .tab-icon-image,
@@ -1212,21 +1212,21 @@ See the above repository for updates as well as full license text. */
 
 /* New activity in tab */
 .tabbrowser-tab[titlechanged] .tab-text.tab-label {
-  color: #f9845b !important;
+  color: #f3ad73 !important;
   font-style: italic !important;
 }
 
 /* Selected (loaded) */
 .tabbrowser-tab[selected="true"] .tab-label {
-  color: #ffffff !important;
+  color: #ffffffd8 !important;
   font-style: normal !important;
-  font-weight: bold !important;
-  text-shadow: 1px 1px 1px #000000c8 !important;
+  /* font-weight: bold !important;8*/
+  text-shadow: 1px 1px 1px #000000cf !important;
 }
 
 /* loading */
 .tabbrowser-tab[busy] .tab-text.tab-label {
-  color: #7c7c7cb0 !important;
+  color: #7c7c7cd3 !important;
   font-style: italic !important;
 }
 
@@ -1251,7 +1251,7 @@ See the above repository for updates as well as full license text. */
   margin-inline-start: 0px !important;
 }
 
-/* selected / multiselected colors *
+/* selected / multiselected colors */
 .tabbrowser-tab:is([selected], [multiselected])>.tab-stack>.tab-background:not(:-moz-lwtheme) {
   box-shadow: 0 0 1px rgba(49, 49, 49, 0.649) !important;
 }
@@ -1265,7 +1265,7 @@ See the above repository for updates as well as full license text. */
 .tab-background:is([selected], [multiselected]):-moz-lwtheme {
   box-shadow: inset -1px 0 0 0 rgba(255, 255, 255, .4),
     inset 1px 0 0 0 rgba(255, 255, 255, .4) !important;
-}*/
+}
 
 
 .tabbrowser-tab:not([selected="true"]) .tab-icon-image {
@@ -1316,7 +1316,7 @@ See the above repository for updates as well as full license text. */
   filter: drop-shadow(16px 16px 10px black) !important;
 }
 
-/*rework en la Linea de Contenedores-BordeFavicon*/
+/*rework en la Linea de Contenedores-BordeFavicon*
 
 .tab-icon-pending:not([selected], [pinned]),
 .tab-icon-pending:not([pinned]),
@@ -1488,7 +1488,7 @@ window[privatebrowsingmode="temporary"] #tabbrowser-tabs {
 #TabsToolbar-customization-target> :is(toolbarbutton, toolbaritem, toolbarpaletteitem):first-child {
   margin-inline-start: 2px !important;
 }
-*/
+
 #urlbar[breakout][breakout-extend][open]>#urlbar-background {
   box-shadow: 0 5px 18px rgba(0, 0, 0, .4) !important;
 }
@@ -1524,13 +1524,13 @@ window[privatebrowsingmode="temporary"] #tabbrowser-tabs {
   filter: brightness(125%) saturate(150%) !important;
 }
 
-/* credits to phroton or lepton idk */
+/* credits to phroton or lepton idk *
 .tabbrowser-tab:not([pinned]) .tab-icon-overlay[pictureinpicture] {
-  /* Shape */
+  /* Shape *
   display: flex !important;
   order: 2 !important;
 
-  /* Color */
+  /* Color *
   fill: currentColor;
   opacity: 0.8;
   -moz-context-properties: fill;
@@ -1623,7 +1623,7 @@ root:-moz-lwtheme {
   background-color: var(--toolbar-bgcolor) !important;
 }
 
-/* Color bolita de cargando página */
+/* Color bolita de cargando página *
 
 #tabbrowser-tabs {
   --tab-loading-fill: var(--button-primary-bgcolor) !important;
@@ -1749,7 +1749,7 @@ toolbar #firefox-view-button[aria-pressed="true"] .toolbarbutton-icon {
 
 .tab-background[selected="true"] {
   background-image:
-    radial-gradient(circle at center,
+    radial-gradient(circle at bottom center,
       #6c3ac3d6 15px,
       #110421b8) !important;
 }
@@ -1758,7 +1758,6 @@ toolbar #firefox-view-button[aria-pressed="true"] .toolbarbutton-icon {
 .tabbrowser-tab[selected="true"] .tab-label {
   color: #eee !important;
   font-style: normal !important;
-  font-weight: bold !important;
   text-shadow: 1px 2px 1px #000 !important;
 }
 
@@ -2639,7 +2638,7 @@ browser[type="content"] {
 .tabbrowser-tab[class*="identity-color-"] .tab-label {
   color: var(--identity-tab-color) !important;
   font-weight: bold !important;
-  font-style: underline !important;
+  /* font-style: underline !important;*/
 }
 
 /* Active tab brightness *
@@ -3008,16 +3007,15 @@ toolbar .toolbarbutton-1:not([disabled="true"]):is([open], [checked], :hover:act
   font-weight: bold !important;
 }
 
-/* fancy line for container tabs */
+/* fancy line for container tabs *
 
 #TabsToolbar #tabbrowser-tabs .tabbrowser-tab[class*="identity-color"] .tab-label {
-  text-decoration: underline !important;
   text-decoration-color: var(--identity-icon-color) !important;
-  /* font-weight: bold !important;*/
+  /* font-weight: bold !important;*
   text-shadow:
     -1px -1px 1px rgba(34, 31, 31, 0.853),
     1px 1px 1px rgba(0, 0, 0, 0.901) !important;
-}
+}*/
 
 #urlbar-background,
 #searchbar {
@@ -4329,15 +4327,15 @@ toolbar #firefox-view-button[aria-pressed="true"] .toolbarbutton-icon {
 
 .tab-background[selected="true"] {
   background-image: radial-gradient(circle at bottom center,
-      #6c3ac38a 5px,
-      #110421) !important;
+      #6c3ac3d6 15px,
+      #110421b8) !important;
 }
 
 .tabbrowser-tab[selected="true"] .tab-label {
   color: #eee !important;
   font-style: normal !important;
   font-weight: bold !important;
-  /*  letter-spacing: .05em;*/
+  letter-spacing: .05em;
   text-shadow:
     4px 4px 0px #d5d5d5,
     7px 7px 0px rgba(0, 0, 0, 0.2);
@@ -5039,7 +5037,7 @@ toolbarpaletteitem[place="palette"]>#search-container {
   }
 }
 
-/* border between tab bar and navbar *
+/* border between tab bar and navbar */
 :root #nav-bar {
   box-shadow:
     0 -1px 0 0 hsla(280, 6%, 0%, 0.1),
@@ -5281,51 +5279,38 @@ See the above repository for updates as well as full license text. */
 
   --Loaded-and-selected-text: #eee;
   --Loaded-and-selected-italic: normal;
-  --Loaded-and-selected-bold: normal;
+  --Loaded-and-selected-bold: bold;
 
-  --Loaded-but-unread-text: #f241cc;
+  --Loaded-but-unread-text: #f9845b;
   --Loaded-but-unread-italic: italic;
   --Loaded-but-unread-bold: normal;
 
-  --Not-loaded-text: #7b7b7b;
+  --Not-loaded-text: #e8ab52;
   --Not-loaded-italic: italic;
   --Not-loaded-bold: normal;
 
-  --Loading-text: #f0ba07;
+  --Loading-text: #ba00e5;
   --Loading-italic: normal;
   --Loading-bold: normal;
 }
 
 /* Customize the gradient colors here */
 :root {
-  --selected-tab-text-gradient: linear-gradient(90deg, #9400ff,
-      #ba00e5,
-      #df06b9,
-      #e62da7,
-      #f13b95,
-      #f64d86,
-      #f85f7a,
-      #fc7169,
-      #f9845b,
-      #e8ab52 100%);
+  --selected-tab-text-gradient: linear-gradient(90deg, #ff7a18 0%, #e52e71 50%, #007cf0 100%);
 }
 
-/*   --selected-tab-text-gradient: linear-gradient(90deg, #ff7a18 0%, #e52e71 50%, #007cf0 100%);*/
-
-/* Apply the gradient to the active tab’s label *
+/* Apply the gradient to the active tab’s label */
 .tabbrowser-tab[selected="true"] .tab-label {
   background-image: var(--selected-tab-text-gradient);
   background-clip: text;
   -webkit-background-clip: text;
-  /* helps on macOS builds *
+  /* helps on macOS builds */
   color: transparent !important;
-  /* let the gradient show through *
+  /* let the gradient show through */
   background-repeat: no-repeat;
   background-size: 100% 100%;
-  font-weight: 700;
-  /* optional: make it stand out a bit *
-  text-shadow:
-    0px 1px 0px rgba(70, 70, 70, 0.682),
-    0px 1px 1px rgba(17, 17, 17, 0.614) !important;
-  /* make sure shadows don't hide the gradient *
+  font-weight: 400;
+  /* optional: make it stand out a bit */
+  text-shadow: none !important;
+  /* make sure shadows don't hide the gradient */
 }
